@@ -30,12 +30,12 @@ Tugas AI adalah membaca dokumen ini sebelum mengoding untuk memahami konteks, ba
 - [x] *Commit* pertama dan *push* ke `main`.
 
 ### Tahap 1: Frontend Blueprint (Visual Statis)
-- [ ] Buat kerangka *layout* menggunakan HTML murni, Tailwind CSS v4, dan Alpine.js.
-- [ ] Desain Halaman Login (Card, aksen hijau zamrud/emas).
-- [ ] Desain Dashboard Siswa (Widget AI 'Rekomendasi Materi', Widget 'Peringkat Kelas', Grid Mapel).
-- [ ] Desain Dashboard Guru (Tabel kelola materi, tombol 'Generate via AI Gemini').
-- [ ] Desain Forum Diskusi (Gaya *thread* asinkron dengan tombol *Like* dan *Reply*). 
-- [ ] *Git Commit & Push*.
+- [x] Buat kerangka *layout* menggunakan HTML murni, Tailwind CSS v4, dan Alpine.js.
+- [x] Desain Halaman Login (Card, aksen hijau zamrud/emas).
+- [x] Desain Dashboard Siswa (Widget AI 'Rekomendasi Materi', Widget 'Peringkat Kelas', Grid Mapel).
+- [x] Desain Dashboard Guru (Tabel kelola materi, tombol 'Generate via AI Gemini').
+- [x] Desain Forum Diskusi (Gaya *thread* asinkron dengan tombol *Like* dan *Reply*). 
+- [x] *Git Commit & Push*.
 
 ### Tahap 2: Backend Brain (Inisialisasi Laravel & Database)
 - [ ] Instalasi proyek Laravel 12 murni dan konfigurasi `.env` (MySQL lokal).
