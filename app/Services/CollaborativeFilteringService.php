@@ -3,7 +3,10 @@
 namespace App\Services;
 
 use App\Models\LogAktivitas;
+use App\Models\HasilKuis;
 use App\Models\Materi;
+use App\Models\Kuis;
+use App\Models\ForumThread;
 use Illuminate\Support\Facades\DB;
 
 class CollaborativeFilteringService
@@ -13,36 +16,58 @@ class CollaborativeFilteringService
      */
     public function getRecommendations($userId, $kelasId, $limit = 5)
     {
-        $interactions = LogAktivitas::select('user_id', 'item_id', 'jenis_aktivitas', 'durasi')
-            ->whereIn('item_id', function($query) use ($kelasId) {
-                $query->select('id')->from('materi')->where('kelas_id', $kelasId);
-            })
-            ->where('jenis_aktivitas', 'baca_materi')
-            ->get();
+        $userIds = DB::table('users')->where('kelas_id', $kelasId)->pluck('id')->toArray();
+        if(!in_array($userId, $userIds)) {
+            $userIds[] = $userId;
+        }
 
         $itemUserMatrix = [];
         $userItems = []; 
 
-        foreach ($interactions as $log) {
-            $itemId = $log->item_id;
-            $uId = $log->user_id;
-            
-            $score = 1; 
+        // 1. Baca Materi (+1)
+        $logsMateri = LogAktivitas::whereIn('user_id', $userIds)
+            ->where('jenis_aktivitas', 'baca_materi')
+            ->get();
+        foreach ($logsMateri as $log) {
+            // implicit rule: durasi also adds point if any? Prompt just says "membaca materi = +1", so let's stick to +1 as base.
+            $score = 1;
             if ($log->durasi > 0) {
                 $score += min(5, ceil($log->durasi / 60)); 
             }
+            $this->addScore($itemUserMatrix, $log->item_id, $log->user_id, $score);
+        }
 
-            if (!isset($itemUserMatrix[$itemId])) {
-                $itemUserMatrix[$itemId] = [];
+        // 2. Like Forum (+2) & Reply Forum (+3)
+        $logsForum = LogAktivitas::whereIn('user_id', $userIds)
+            ->whereIn('jenis_aktivitas', ['like_forum', 'reply_forum'])
+            ->get();
+        
+        foreach ($logsForum as $log) {
+            $score = $log->jenis_aktivitas == 'like_forum' ? 2 : 3;
+            $thread = ForumThread::find($log->item_id);
+            if ($thread && $thread->mata_pelajaran_id) {
+                // Distribute score to all materi in that mapel for this class
+                $materis = Materi::where('mata_pelajaran_id', $thread->mata_pelajaran_id)
+                                 ->where('kelas_id', $kelasId)
+                                 ->pluck('id');
+                foreach ($materis as $materiId) {
+                    $this->addScore($itemUserMatrix, $materiId, $log->user_id, $score);
+                }
             }
-            if (!isset($itemUserMatrix[$itemId][$uId])) {
-                $itemUserMatrix[$itemId][$uId] = 0;
-            }
-            
-            $itemUserMatrix[$itemId][$uId] += $score;
+        }
 
-            if ($uId == $userId) {
-                $userItems[$itemId] = $itemUserMatrix[$itemId][$uId];
+        // 3. Nilai Kuis > 80 (+5)
+        $hasilKuis = HasilKuis::whereIn('user_id', $userIds)->where('nilai', '>', 80)->get();
+        foreach ($hasilKuis as $hk) {
+            $kuis = Kuis::find($hk->kuis_id);
+            if ($kuis && $kuis->materi_id) {
+                $this->addScore($itemUserMatrix, $kuis->materi_id, $hk->user_id, 5);
+            }
+        }
+
+        foreach ($itemUserMatrix as $itemId => $usersScore) {
+            if (isset($usersScore[$userId])) {
+                $userItems[$itemId] = $usersScore[$userId];
             }
         }
 
@@ -56,7 +81,6 @@ class CollaborativeFilteringService
         foreach ($userItems as $targetItemId => $targetScore) {
             foreach ($allItemIds as $otherItemId) {
                 if ($targetItemId == $otherItemId) continue;
-                
                 if (isset($itemSimilarities[$targetItemId][$otherItemId])) continue;
 
                 $similarity = $this->cosineSimilarity($itemUserMatrix[$targetItemId], $itemUserMatrix[$otherItemId]);
@@ -101,6 +125,17 @@ class CollaborativeFilteringService
         return Materi::whereIn('id', $recommendedItemIds)
             ->orderByRaw("FIELD(id, $placeholders)", $recommendedItemIds)
             ->get();
+    }
+
+    private function addScore(&$matrix, $itemId, $userId, $score)
+    {
+        if (!isset($matrix[$itemId])) {
+            $matrix[$itemId] = [];
+        }
+        if (!isset($matrix[$itemId][$userId])) {
+            $matrix[$itemId][$userId] = 0;
+        }
+        $matrix[$itemId][$userId] += $score;
     }
 
     private function cosineSimilarity($itemA, $itemB)

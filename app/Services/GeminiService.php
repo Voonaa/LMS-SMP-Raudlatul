@@ -17,8 +17,8 @@ class GeminiService
     public function generateKuis($materiText, $jumlahSoal = 5)
     {
         $prompt = "Buatkan kuis pilihan ganda berjumlah {$jumlahSoal} soal berdasarkan materi berikut:\n\n{$materiText}\n\n"
-                . "Keluarkan output HANYA dalam format JSON dengan struktur array objek persis seperti ini, tanpa markdown block (```json): "
-                . "[ { \"pertanyaan\": \"...\", \"opsi_a\": \"...\", \"opsi_b\": \"...\", \"opsi_c\": \"...\", \"opsi_d\": \"...\", \"jawaban_benar\": \"A/B/C/D\" } ]";
+                . "Keluarkan output HANYA dalam format JSON array yang valid, tanpa teks lain di sekitarnya. "
+                . "Format array of object: [ { \"pertanyaan\": \"...\", \"opsi_a\": \"...\", \"opsi_b\": \"...\", \"opsi_c\": \"...\", \"opsi_d\": \"...\", \"jawaban_benar\": \"A/B/C/D\" } ]";
 
         return $this->callGemini($prompt);
     }
@@ -26,8 +26,8 @@ class GeminiService
     public function generateRancanganMateri($topik, $kelas)
     {
         $prompt = "Buatkan rancangan materi pembelajaran terstruktur untuk anak SMP kelas {$kelas} dengan topik '{$topik}'.\n"
-                . "Keluarkan output HANYA dalam format JSON dengan struktur persis seperti ini, tanpa markdown block: "
-                . "{ \"judul\": \"...\", \"konten_html\": \"...\" }";
+                . "Keluarkan output HANYA dalam format JSON object tunggal yang valid.\n"
+                . "Format: { \"judul\": \"...\", \"konten_html\": \"...\" }";
 
         return $this->callGemini($prompt);
     }
@@ -47,6 +47,7 @@ class GeminiService
                 ],
                 'generationConfig' => [
                     'temperature' => 0.2,
+                    'responseMimeType' => 'application/json',
                 ]
             ]);
 
