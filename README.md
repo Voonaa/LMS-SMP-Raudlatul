@@ -38,11 +38,11 @@ Tugas AI adalah membaca dokumen ini sebelum mengoding untuk memahami konteks, ba
 - [x] *Git Commit & Push*.
 
 ### Tahap 2: Backend Brain (Inisialisasi Laravel & Database)
-- [ ] Instalasi proyek Laravel 12 murni dan konfigurasi `.env` (MySQL lokal).
-- [ ] Buat Migration untuk: `kelas`, `users`, `mata_pelajaran`, `materi`, `kuis`, `soal_kuis`, `forum_threads`, `log_aktivitas`, dll. Pastikan relasi *Context-Aware* (`kelas_id`) ketat.
-- [ ] Buat Sistem Login kustom (trim username, tanpa fitur register publik).
-- [ ] Buat DatabaseSeeder dengan 5 Mapel Utama, 1 Admin, 5 Guru, 15 Siswa, dan user khusus `agus_test` beserta *dummy interaksi* untuk kebutuhan pengujian algoritma.
-- [ ] *Git Commit & Push*.
+- [x] Instalasi proyek Laravel 12 murni dan konfigurasi `.env` (MySQL lokal).
+- [x] Buat Migration untuk: `kelas`, `users`, `mata_pelajaran`, `materi`, `kuis`, `soal_kuis`, `forum_threads`, `log_aktivitas`, dll. Pastikan relasi *Context-Aware* (`kelas_id`) ketat.
+- [x] Buat Sistem Login kustom (trim username, tanpa fitur register publik).
+- [x] Buat DatabaseSeeder dengan 5 Mapel Utama, 1 Admin, 5 Guru, 15 Siswa, dan user khusus `agus_test` beserta *dummy interaksi* untuk kebutuhan pengujian algoritma.
+- [x] *Git Commit & Push*.
 
 ### Tahap 3: Mesin AI & Gamifikasi (Core Logic)
 - [ ] Implementasikan `GeminiService.php` dengan output *Structured JSON* untuk fitur Guru.
