@@ -35,4 +35,9 @@ Route::middleware('auth')->group(function () {
 
     // Leaderboard (API)
     Route::get('/api/leaderboard/{kelasId}', [LeaderboardController::class, 'getLeaderboard']);
+
+    // Route Admin Testing
+    Route::middleware('can:admin')->group(function () {
+        Route::get('/admin/testing/mae', [\App\Http\Controllers\TestingController::class, 'mae'])->name('admin.testing.mae');
+    });
 });

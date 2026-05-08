@@ -58,6 +58,7 @@ Tugas AI adalah membaca dokumen ini sebelum mengoding untuk memahami konteks, ba
 - [x] *Git Commit & Push*.
 
 ### Tahap 5: Senjata Rahasia Bab 4 (Endpoint Pengujian)
-- [ ] Buat Controller rahasia di `/admin/testing/mae`.
-- [ ] Buat UI halaman yang menampilkan 3 metrik utama: **MAE**, **Precision@10**, dan **Recall@10** dari hasil rekomendasi siswa `agus_test` dibandingkan dengan *dummy* faktanya.
-- [ ] *Git Commit & Push*.
+- [x] Buat Controller rahasia di `/admin/testing/mae`.
+- [x] Tambahkan fungsi untuk menghitung *Mean Absolute Error* (MAE) dari algoritma CF (membandingkan prediksi AI dengan rating aktual di `log_aktivitas` jika ada).
+- [x] Tampilkan hasil ini dalam *dashboard minimalis* yang hanya dapat diakses oleh *Role* Admin.
+- [x] *Git Commit & Push*.
