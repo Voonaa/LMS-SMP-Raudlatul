@@ -51,11 +51,11 @@ Tugas AI adalah membaca dokumen ini sebelum mengoding untuk memahami konteks, ba
 - [x] *Git Commit & Push*.
 
 ### Tahap 4: The Stitching (Integrasi UI dan Backend)
-- [ ] Ubah file HTML statis dari Tahap 1 menjadi struktur `Blade` Laravel.
-- [ ] Hubungkan form kelola kuis/materi Guru dengan Controller AI Gemini (buat *loading state* via Alpine.js).
-- [ ] Hubungkan widget Dashboard Siswa dengan hasil rekomendasi algoritma CF dan poin Gamifikasi.
-- [ ] Hubungkan Forum Diskusi agar setiap klik *Like/Reply* memicu pencatatan ke tabel `log_aktivitas`.
-- [ ] *Git Commit & Push*.
+- [x] Ubah file HTML statis dari Tahap 1 menjadi struktur `Blade` Laravel.
+- [x] Hubungkan form kelola kuis/materi Guru dengan Controller AI Gemini (buat *loading state* via Alpine.js).
+- [x] Hubungkan widget Dashboard Siswa dengan hasil rekomendasi algoritma CF dan poin Gamifikasi.
+- [x] Hubungkan Forum Diskusi agar setiap klik *Like/Reply* memicu pencatatan ke tabel `log_aktivitas`.
+- [x] *Git Commit & Push*.
 
 ### Tahap 5: Senjata Rahasia Bab 4 (Endpoint Pengujian)
 - [ ] Buat Controller rahasia di `/admin/testing/mae`.

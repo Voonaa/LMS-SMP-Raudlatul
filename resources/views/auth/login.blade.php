@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+
+<html lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Login - SMP Islam Raudlatul Hikmah</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "inverse-primary": "#68dba9",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-variant": "#d3e4fe",
+                        "surface-container-highest": "#d3e4fe",
+                        "on-tertiary-fixed-variant": "#574500",
+                        "primary": "#006948",
+                        "primary-container": "#00855d",
+                        "on-secondary-container": "#616363",
+                        "on-tertiary-container": "#4e3d00",
+                        "secondary-container": "#dfe0e0",
+                        "tertiary-fixed": "#ffe088",
+                        "surface-container-high": "#dce9ff",
+                        "outline": "#6d7a72",
+                        "on-tertiary-fixed": "#241a00",
+                        "on-tertiary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "surface-container-low": "#eff4ff",
+                        "on-primary-fixed": "#002114",
+                        "primary-fixed": "#85f8c4",
+                        "tertiary-fixed-dim": "#e9c349",
+                        "error": "#ba1a1a",
+                        "on-surface": "#0b1c30",
+                        "background": "#f8f9ff",
+                        "secondary": "#5d5f5f",
+                        "on-primary-fixed-variant": "#005137",
+                        "on-surface-variant": "#3d4a42",
+                        "surface-dim": "#cbdbf5",
+                        "on-error": "#ffffff",
+                        "outline-variant": "#bccac0",
+                        "surface": "#f8f9ff",
+                        "on-background": "#0b1c30",
+                        "tertiary-container": "#cba72f",
+                        "surface-container": "#e5eeff",
+                        "on-secondary": "#ffffff",
+                        "secondary-fixed-dim": "#c6c6c7",
+                        "tertiary": "#735c00",
+                        "surface-tint": "#006c4a",
+                        "on-secondary-fixed-variant": "#454747",
+                        "on-primary-container": "#f5fff7",
+                        "on-primary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "primary-fixed-dim": "#68dba9",
+                        "inverse-surface": "#213145",
+                        "secondary-fixed": "#e2e2e2",
+                        "on-secondary-fixed": "#1a1c1c",
+                        "surface-bright": "#f8f9ff",
+                        "inverse-on-surface": "#eaf1ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter": "24px",
+                        "margin": "32px",
+                        "base": "8px",
+                        "sm": "12px",
+                        "xs": "4px",
+                        "lg": "40px",
+                        "md": "24px",
+                        "xl": "64px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "headline-xl": ["Inter"],
+                        "body-md": ["Inter"],
+                        "label-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "500"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "headline-xl": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.02em", "fontWeight": "600"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        /* Custom subtle shadow as requested by brand guidelines */
+        .shadow-ambient {
+            box-shadow: 0 10px 40px -10px rgba(0, 105, 72, 0.08), 0 4px 6px -4px rgba(0, 105, 72, 0.04);
+        }
+    </style>
+</head>
+<body class="bg-background min-h-screen flex items-center justify-center p-4 antialiased text-on-surface">
+<main class="w-full max-w-[440px]">
+<!-- Login Card -->
+<div class="bg-surface-container-lowest rounded-xl shadow-ambient border-t-4 border-primary overflow-hidden relative">
+<!-- Subtle background pattern decoration (optional, abstracting Islamic geometry subtlety) -->
+<div class="absolute top-0 right-0 -mr-16 -mt-16 w-48 h-48 rounded-full bg-primary-container opacity-[0.03] pointer-events-none"></div>
+<div class="absolute bottom-0 left-0 -ml-16 -mb-16 w-32 h-32 rounded-full bg-tertiary-container opacity-[0.04] pointer-events-none"></div>
+<div class="p-8 sm:p-10 relative z-10">
+<!-- Header / Branding -->
+<div class="text-center mb-8 flex flex-col items-center">
+<div class="w-24 h-24 mb-4 flex items-center justify-center rounded-full bg-surface-container-low p-2">
+<img alt="Logo SMP Islam Raudlatul Hikmah" class="max-w-full max-h-full object-contain object-center" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAsfudO68vp94L1S_K-XLRsslehWJhSD6fy1hhRFx1Jh8jXFiOdOP_1zMOtWKnnxez4RfIOc0c7bCszPqYrkCiosOjFjCJIxBSH4240SjstSh8yYBrx8XW3PIsDtoo2z4yVyGE9eMT0RYbn1BuWVH5j8TbbcShDQJvSMfqWCgmah0M7RYD_1mTFlRyMkbHkFTX_1eAm22Cr71X-JGxFbGzoeRRWzQBLQ-uBkUt3HFkn-mf8bx0I9iz15I3qEX4Kvmy4pdD7fAjSsfeK"/>
+</div>
+<h1 class="font-headline-md text-headline-md text-primary tracking-tight">Raudlatul Hikmah</h1>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">LMS Portal Login</p>
+</div>
+<!-- Login Form -->
+<form action="{{ route('login') }}" class="space-y-6" method="POST">
+    @csrf
+<!-- Username Input -->
+<div>
+<label class="block font-label-lg text-label-lg text-on-surface mb-2" for="username">Username / NISN / NIP</label>
+<div class="relative">
+<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-outline-variant">person</span>
+</div>
+<input class="block w-full pl-10 pr-3 py-3 border border-outline-variant rounded-lg bg-surface-container-lowest text-on-surface placeholder-outline focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-shadow duration-200" id="username" name="username" placeholder="Masukkan ID pengguna" required="" type="text"/>
+</div>
+@error('username')
+    <p class="text-sm text-error mt-1">{{ $message }}</p>
+@enderror
+</div>
+<!-- Password Input -->
+<div>
+<label class="block font-label-lg text-label-lg text-on-surface mb-2" for="password">Password</label>
+<div class="relative">
+<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-outline-variant">lock</span>
+</div>
+<input class="block w-full pl-10 pr-3 py-3 border border-outline-variant rounded-lg bg-surface-container-lowest text-on-surface placeholder-outline focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-shadow duration-200" id="password" name="password" placeholder="Masukkan password" required="" type="password"/>
+</div>
+</div>
+<!-- Submit Button -->
+<div class="pt-2">
+<button class="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm font-label-lg text-label-lg text-on-primary bg-primary hover:bg-primary-container focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors duration-200 group" type="submit">
+                            Masuk ke Portal
+                            <span class="material-symbols-outlined ml-2 text-[20px] group-hover:translate-x-1 transition-transform duration-200">arrow_forward</span>
+</button>
+</div>
+</form>
+<!-- Footer details inside card -->
+<div class="mt-8 text-center">
+<p class="font-label-sm text-label-sm text-outline">
+                        Menemukan kendala? <a class="text-primary font-semibold hover:underline" href="#">Hubungi Administrator</a>
+</p>
+</div>
+</div>
+</div>
+</main>
+</body></html>
