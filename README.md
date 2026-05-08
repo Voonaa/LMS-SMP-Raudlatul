@@ -45,10 +45,10 @@ Tugas AI adalah membaca dokumen ini sebelum mengoding untuk memahami konteks, ba
 - [x] *Git Commit & Push*.
 
 ### Tahap 3: Mesin AI & Gamifikasi (Core Logic)
-- [ ] Implementasikan `GeminiService.php` dengan output *Structured JSON* untuk fitur Guru.
-- [ ] Implementasikan `CollaborativeFilteringService.php` (Item-Based CF dengan *Cosine Similarity*) membaca data *Implicit Feedback*.
-- [ ] Implementasikan `LeaderboardController` untuk menampilkan peringkat relatif berdasarkan `kelas_id`.
-- [ ] *Git Commit & Push*.
+- [x] Implementasikan `GeminiService.php` dengan output *Structured JSON* untuk fitur Guru.
+- [x] Implementasikan `CollaborativeFilteringService.php` (Item-Based CF dengan *Cosine Similarity*) membaca data *Implicit Feedback*.
+- [x] Implementasikan `LeaderboardController` untuk menampilkan peringkat relatif berdasarkan `kelas_id`.
+- [x] *Git Commit & Push*.
 
 ### Tahap 4: The Stitching (Integrasi UI dan Backend)
 - [ ] Ubah file HTML statis dari Tahap 1 menjadi struktur `Blade` Laravel.
