@@ -1,342 +1,131 @@
-<!DOCTYPE html>
+@extends('layouts.guru')
 
-<html lang="en"><head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Dashboard Guru - Pengelolaan Materi</title>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<script defer="" src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<script id="tailwind-config">
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    colors: {
-                        "inverse-primary": "#68dba9",
-                        "surface-container-lowest": "#ffffff",
-                        "surface-variant": "#d3e4fe",
-                        "surface-container-highest": "#d3e4fe",
-                        "on-tertiary-fixed-variant": "#574500",
-                        "primary": "#006948",
-                        "primary-container": "#00855d",
-                        "on-secondary-container": "#616363",
-                        "on-tertiary-container": "#4e3d00",
-                        "secondary-container": "#dfe0e0",
-                        "tertiary-fixed": "#ffe088",
-                        "surface-container-high": "#dce9ff",
-                        "outline": "#6d7a72",
-                        "on-tertiary-fixed": "#241a00",
-                        "on-tertiary": "#ffffff",
-                        "on-error-container": "#93000a",
-                        "surface-container-low": "#eff4ff",
-                        "on-primary-fixed": "#002114",
-                        "primary-fixed": "#85f8c4",
-                        "tertiary-fixed-dim": "#e9c349",
-                        "error": "#ba1a1a",
-                        "on-surface": "#0b1c30",
-                        "background": "#f8f9ff",
-                        "secondary": "#5d5f5f",
-                        "on-primary-fixed-variant": "#005137",
-                        "on-surface-variant": "#3d4a42",
-                        "surface-dim": "#cbdbf5",
-                        "on-error": "#ffffff",
-                        "outline-variant": "#bccac0",
-                        "surface": "#f8f9ff",
-                        "on-background": "#0b1c30",
-                        "tertiary-container": "#cba72f",
-                        "surface-container": "#e5eeff",
-                        "on-secondary": "#ffffff",
-                        "secondary-fixed-dim": "#c6c6c7",
-                        "tertiary": "#735c00",
-                        "surface-tint": "#006c4a",
-                        "on-secondary-fixed-variant": "#454747",
-                        "on-primary-container": "#f5fff7",
-                        "on-primary": "#ffffff",
-                        "error-container": "#ffdad6",
-                        "primary-fixed-dim": "#68dba9",
-                        "inverse-surface": "#213145",
-                        "secondary-fixed": "#e2e2e2",
-                        "on-secondary-fixed": "#1a1c1c",
-                        "surface-bright": "#f8f9ff",
-                        "inverse-on-surface": "#eaf1ff"
-                    },
-                    borderRadius: {
-                        "DEFAULT": "0.25rem",
-                        "lg": "0.5rem",
-                        "xl": "0.75rem",
-                        "full": "9999px"
-                    },
-                    spacing: {
-                        "gutter": "24px",
-                        "margin": "32px",
-                        "base": "8px",
-                        "sm": "12px",
-                        "xs": "4px",
-                        "lg": "40px",
-                        "md": "24px",
-                        "xl": "64px"
-                    },
-                    fontFamily: {
-                        "headline-md": ["Inter"],
-                        "label-sm": ["Inter"],
-                        "body-lg": ["Inter"],
-                        "headline-lg": ["Inter"],
-                        "headline-xl": ["Inter"],
-                        "body-md": ["Inter"],
-                        "label-lg": ["Inter"]
-                    },
-                    fontSize: {
-                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
-                        "label-sm": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
-                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
-                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
-                        "headline-xl": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
-                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
-                        "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.02em", "fontWeight": "600" }]
-                    }
-                }
-            }
-        }
-    </script>
-<style>
-        body { font-family: 'Inter', sans-serif; }
-    </style>
-</head>
-<body class="bg-surface text-on-surface flex min-h-screen" x-data="{ sidebarOpen: false }">
-<!-- SideNavBar (Predicted & Rendered based on rules) -->
-<aside :class="{'translate-x-0': sidebarOpen, '-translate-x-full': !sidebarOpen}" class="hidden lg:flex flex-col border-r border-outline-variant dark:border-outline shadow-sm bg-surface-container-lowest dark:bg-inverse-surface w-64 h-screen fixed left-0 top-0 overflow-y-auto z-40 transition-transform transform lg:translate-x-0">
-<!-- Header / Logo Area -->
-<div class="px-6 py-6 border-b border-surface-container flex flex-col items-center justify-center space-y-2">
-<div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center overflow-hidden border-2 border-primary/20">
-<img alt="SMP Islam Raudlatul Hikmah Logo" class="w-full h-full object-cover" data-alt="A refined, minimalist logo emblem featuring an open book, a crescent moon with a star, and a growing leafy branch emerging from the center, rendered in deep emerald green and soft elegant gold on a clean white background. High contrast, professional academic aesthetic, sharp vector style design elements." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD2ucPCKhVpjhm_oJUhCjU4NBrxrTBMqFLI0uzUFAv1XtqrM7N3SA9fJjSEr3FF-jWGa7TvKosH4hfxvieN9vbcBnuiinrWfUE2dMegLJqAx636KZG-JQ-LUm3NMSPAsrXpnPD96qXDOE62ereHdrDUYQ9LfrNAUy0Q7k-TVlUtFGnXaEmSTtstmh8dF8c5_L-rWolGsNUMz64ilbtS1itRsNYF2NSTmlePTsDJ9NgBIUxrGu8a8-2Ppo2Z5vI0WtRf17CNG0HWJQT1"/>
-</div>
-<div class="text-center">
-<h2 class="font-headline-md text-headline-md font-bold text-primary dark:text-inverse-primary leading-tight">Raudlatul Hikmah</h2>
-<p class="font-label-sm text-label-sm text-on-surface-variant mt-1">LMS Portal</p>
-</div>
-</div>
-<!-- Navigation Links -->
-<nav class="flex-1 py-4 flex flex-col gap-1">
-<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant hover:bg-surface-container dark:hover:bg-secondary-container transition-colors" href="#">
-<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">dashboard</span>
-<span class="font-label-lg text-label-lg">Dashboard</span>
-</a>
-<a class="flex items-center gap-3 px-4 py-3 text-primary dark:text-inverse-primary bg-surface-container-low dark:bg-secondary border-l-4 border-primary dark:border-inverse-primary font-bold" href="#">
-<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">menu_book</span>
-<span class="font-label-lg text-label-lg">Materi</span>
-</a>
-<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant hover:bg-surface-container dark:hover:bg-secondary-container transition-colors" href="#">
-<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">assignment</span>
-<span class="font-label-lg text-label-lg">Tugas</span>
-</a>
-<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant hover:bg-surface-container dark:hover:bg-secondary-container transition-colors" href="#">
-<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">forum</span>
-<span class="font-label-lg text-label-lg">Forum</span>
-</a>
-</nav>
-<!-- Footer Actions -->
-<div class="p-4 border-t border-surface-container flex flex-col gap-1">
-<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant hover:bg-surface-container dark:hover:bg-secondary-container transition-colors" href="#">
-<span class="material-symbols-outlined">settings</span>
-<span class="font-label-lg text-label-lg">Settings</span>
-</a>
-<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant hover:bg-surface-container dark:hover:bg-secondary-container transition-colors" href="#">
-<span class="material-symbols-outlined">help</span>
-<span class="font-label-lg text-label-lg">Bantuan</span>
-</a>
-<form id="logout-form" action="{{ route('logout') }}" method="POST" class="w-full mt-4">
-    @csrf
-    <button type="submit" class="w-full py-2 flex items-center justify-center gap-2 text-error border border-error rounded-lg hover:bg-error-container transition-colors font-label-lg text-label-lg">
-        <span class="material-symbols-outlined">logout</span>
-        Keluar
-    </button>
-</form>
-</div>
-</aside>
-<!-- Main Content Wrapper -->
-<div class="flex-1 lg:ml-64 flex flex-col min-h-screen overflow-x-hidden">
-<!-- TopAppBar (Predicted & Rendered) -->
-<header class="flex justify-between items-center w-full px-margin py-base sticky top-0 z-30 bg-surface dark:bg-on-background shadow-sm">
-<!-- Mobile Menu Toggle -->
-<button @click="sidebarOpen = !sidebarOpen" class="lg:hidden p-2 text-on-surface-variant rounded-md hover:bg-surface-container transition-colors focus:outline-none">
-<span class="material-symbols-outlined">menu</span>
-</button>
-<!-- Brand / Context Title -->
-<div class="flex items-center gap-4">
-<h1 class="font-headline-md text-headline-md font-extrabold text-primary dark:text-inverse-primary hidden sm:block">SMP Islam Raudlatul Hikmah</h1>
-</div>
-<!-- Actions Right -->
-<div class="flex items-center gap-4">
-<div class="relative hidden md:flex items-center">
-<span class="material-symbols-outlined absolute left-3 text-outline">search</span>
-<input class="pl-10 pr-4 py-2 bg-surface-container rounded-full border-none focus:ring-2 focus:ring-primary text-sm w-64 placeholder-outline" placeholder="Cari materi..." type="text"/>
-</div>
-<button class="p-2 text-on-surface-variant hover:bg-surface-container rounded-full transition-colors relative">
-<span class="material-symbols-outlined">notifications</span>
-<span class="absolute top-1 right-1 w-2 h-2 bg-error rounded-full"></span>
-</button>
-<button class="w-10 h-10 rounded-full overflow-hidden border-2 border-surface-container hover:border-primary transition-colors focus:outline-none">
-<img alt="User Avatar" class="w-full h-full object-cover" data-alt="A highly detailed portrait of a male teacher in a professional, light-filled academic environment. He wears a neat button-down shirt and looks approachable yet authoritative. The lighting is soft and bright, creating a clean, modern aesthetic suitable for an educational platform avatar." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAx7WkaUq7O1JQ5aeBO3iHBJBphmrwFmreVYGAG3hgAlspHlM7MYYQ37kxNWS8VRgHryoq3kWDOzPDn_sly8Znc7stn-2lzPtl1SPsHx04jDwgNsyv_8wOC_78eTSlit9Y8RRngXLxRNhpsCTvm1bcdfIW0gGQxeT6FLW7vPPn1qqqPWxtKti34I6N45jCly-5BVT5XhAdncx6F4dmlfPO6fWH-g9ukmqkw4_JiPm2jDxaXZKugOVfggVmSOzTQPk4ZYNWfrO4XqIxq"/>
-</button>
-</div>
-</header>
-<!-- Main Canvas -->
-<main class="flex-1 p-margin bg-background">
-<!-- Page Header Section -->
+@section('title', 'Dashboard Guru - Pengelolaan Materi')
+@section('page_title', 'Pengelolaan Materi')
+
+@section('content')
 <div class="mb-lg flex flex-col md:flex-row md:items-end justify-between gap-4">
-<div>
-<h2 class="font-headline-xl text-headline-xl text-on-surface">Pengelolaan Materi</h2>
-<p class="font-body-lg text-body-lg text-on-surface-variant mt-2">Kelola dan atur modul pembelajaran, kuis, dan bahan ajar untuk kelas Anda.</p>
+    <div>
+        <h2 class="font-headline-xl text-headline-xl text-on-surface">Pengelolaan Materi</h2>
+        <p class="font-body-lg text-body-lg text-on-surface-variant mt-2">Kelola dan atur modul pembelajaran, kuis, dan bahan ajar untuk kelas Anda.</p>
+    </div>
 </div>
-</div>
-<!-- Action Bar (Bento Grid Style Container for Actions) -->
+
+@if(session('success'))
+    <div class="bg-primary-container text-on-primary-container p-4 mb-6 rounded-xl flex items-center gap-3 shadow-sm">
+        <span class="material-symbols-outlined">check_circle</span>
+        <p class="font-medium">{{ session('success') }}</p>
+    </div>
+@endif
+
+<!-- Action Bar -->
 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-lg">
-<!-- Action 1: Add Manual -->
-<button class="flex items-center justify-center gap-2 py-4 px-6 bg-primary text-on-primary rounded-xl shadow-[0_4px_14px_0_rgba(0,105,72,0.2)] hover:bg-primary-container transition-all hover:-translate-y-0.5 font-label-lg text-label-lg group relative overflow-hidden">
-<div class="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity"></div>
-<span class="material-symbols-outlined">add</span>
-                    Tambah Manual
-                </button>
-<!-- Action 2: Import Excel -->
-<button class="flex items-center justify-center gap-2 py-4 px-6 bg-surface-container-lowest text-primary border border-primary rounded-xl hover:bg-surface-container-low transition-all font-label-lg text-label-lg shadow-sm">
-<span class="material-symbols-outlined text-primary">upload_file</span>
-                    Import Excel
-                </button>
-<!-- Action 3: AI Generate (Gold Gradient Accent) -->
-<button @click="$dispatch('open-ai-modal')" class="flex items-center justify-center gap-2 py-4 px-6 bg-gradient-to-r from-[#d4af37] to-[#f3e5ab] text-on-tertiary-fixed border border-[#cba72f] rounded-xl hover:shadow-[0_4px_20px_0_rgba(212,175,55,0.3)] transition-all hover:-translate-y-0.5 font-label-lg text-label-lg font-bold">
-<span class="material-symbols-outlined">auto_awesome</span>
-                    Generate via AI Gemini
-                </button>
+    <!-- Action 1: Add Manual -->
+    <a href="{{ route('guru.materi.create') }}" class="flex items-center justify-center gap-2 py-4 px-6 bg-primary text-on-primary rounded-xl shadow-[0_4px_14px_0_rgba(0,105,72,0.2)] hover:bg-primary-container transition-all hover:-translate-y-0.5 font-label-lg text-label-lg group relative overflow-hidden">
+        <div class="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity"></div>
+        <span class="material-symbols-outlined">add</span>
+        Tambah Manual
+    </a>
+
+    <!-- Action 2: Import Excel -->
+    <form action="{{ route('guru.materi.import') }}" method="POST" enctype="multipart/form-data" class="hidden" id="importForm">
+        @csrf
+        <input type="file" name="file_csv" id="fileCsv" onchange="document.getElementById('importForm').submit()">
+    </form>
+    <button onclick="document.getElementById('fileCsv').click()" class="flex items-center justify-center gap-2 py-4 px-6 bg-surface-container-lowest text-primary border border-primary rounded-xl hover:bg-surface-container-low transition-all font-label-lg text-label-lg shadow-sm">
+        <span class="material-symbols-outlined text-primary">upload_file</span>
+        Import Excel/CSV
+    </button>
+
+    <!-- Action 3: AI Generate -->
+    <button @click="$dispatch('open-ai-modal')" class="flex items-center justify-center gap-2 py-4 px-6 bg-gradient-to-r from-[#d4af37] to-[#f3e5ab] text-on-tertiary-fixed border border-[#cba72f] rounded-xl hover:shadow-[0_4px_20px_0_rgba(212,175,55,0.3)] transition-all hover:-translate-y-0.5 font-label-lg text-label-lg font-bold">
+        <span class="material-symbols-outlined">auto_awesome</span>
+        Generate via AI Gemini
+    </button>
 </div>
+
 <!-- Content Area: Filter & Table Container -->
 <div class="bg-surface-container-lowest rounded-xl shadow-[0_2px_10px_0_rgba(0,105,72,0.05)] border border-surface-container overflow-hidden">
-<!-- Table Header Tools -->
-<div class="p-6 border-b border-surface-container flex flex-col sm:flex-row justify-between items-center gap-4 bg-white">
-<div class="flex items-center gap-4 w-full sm:w-auto">
-<div class="relative flex-1 sm:w-80">
-<span class="material-symbols-outlined absolute left-3 top-2.5 text-outline text-sm">search</span>
-<input class="w-full pl-10 pr-4 py-2 border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-sm bg-surface" placeholder="Cari judul materi..." type="text"/>
+    <div class="p-6 border-b border-surface-container flex flex-col sm:flex-row justify-between items-center gap-4 bg-white">
+        <div class="flex items-center gap-4 w-full sm:w-auto">
+            <div class="relative flex-1 sm:w-80">
+                <span class="material-symbols-outlined absolute left-3 top-2.5 text-outline text-sm">search</span>
+                <input class="w-full pl-10 pr-4 py-2 border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-sm bg-surface" placeholder="Cari judul materi..." type="text"/>
+            </div>
+        </div>
+        <div class="flex items-center gap-3 w-full sm:w-auto">
+            <select class="border border-outline-variant rounded-lg px-4 py-2 text-sm bg-surface focus:ring-2 focus:ring-primary text-on-surface">
+                <option>Semua Kelas</option>
+                @foreach($kelasList ?? [] as $k)
+                    <option value="{{ $k->id }}">Kelas {{ $k->tingkat }}</option>
+                @endforeach
+            </select>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-surface-container-low text-on-surface-variant font-label-lg text-label-lg uppercase tracking-wider text-xs border-b border-outline-variant">
+                    <th class="p-4 font-semibold">Judul Materi</th>
+                    <th class="p-4 font-semibold">Mata Pelajaran</th>
+                    <th class="p-4 font-semibold">Kelas</th>
+                    <th class="p-4 font-semibold">Tgl Dibuat</th>
+                    <th class="p-4 font-semibold text-right">Aksi</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-surface-container text-body-md">
+                @forelse($materiList ?? [] as $materi)
+                <tr class="hover:bg-surface/50 transition-colors group">
+                    <td class="p-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-lg bg-primary-container flex items-center justify-center text-on-primary-container">
+                                <span class="material-symbols-outlined">menu_book</span>
+                            </div>
+                            <div>
+                                <p class="font-medium text-on-surface group-hover:text-primary transition-colors">{{ $materi->judul }}</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="p-4 text-on-surface-variant">{{ $materi->mata_pelajaran->nama_mapel }}</td>
+                    <td class="p-4">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-container-high text-on-surface">Kelas {{ $materi->kelas->tingkat }}</span>
+                    </td>
+                    <td class="p-4 text-on-surface-variant text-sm">{{ $materi->created_at->format('d M Y') }}</td>
+                    <td class="p-4 text-right">
+                        <div class="flex items-center justify-end gap-2">
+                            <a href="{{ route('guru.materi.show', $materi->id) }}" class="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded-md transition-colors" title="Buka">
+                                <span class="material-symbols-outlined text-sm">visibility</span>
+                            </a>
+                            <a href="{{ route('guru.materi.edit', $materi->id) }}" class="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded-md transition-colors" title="Edit">
+                                <span class="material-symbols-outlined text-sm">edit</span>
+                            </a>
+                            <form action="{{ route('guru.materi.destroy', $materi->id) }}" method="POST" class="inline">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="p-1.5 text-on-surface-variant hover:text-error hover:bg-error-container rounded-md transition-colors" title="Hapus">
+                                    <span class="material-symbols-outlined text-sm">delete</span>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                @empty
+                <tr><td colspan="5" class="p-4 text-center text-on-surface-variant">Belum ada materi.</td></tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
 </div>
-</div>
-<div class="flex items-center gap-3 w-full sm:w-auto">
-<select class="border border-outline-variant rounded-lg px-4 py-2 text-sm bg-surface focus:ring-2 focus:ring-primary text-on-surface">
-<option>Semua Kelas</option>
-<option>Kelas 7</option>
-<option>Kelas 8</option>
-<option>Kelas 9</option>
-</select>
-<button class="p-2 border border-outline-variant rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors flex items-center justify-center">
-<span class="material-symbols-outlined text-sm">filter_list</span>
-</button>
-</div>
-</div>
-<!-- Table -->
-<div class="overflow-x-auto">
-<table class="w-full text-left border-collapse">
-<thead>
-<tr class="bg-surface-container-low text-on-surface-variant font-label-lg text-label-lg uppercase tracking-wider text-xs border-b border-outline-variant">
-<th class="p-4 font-semibold w-12 text-center">
-<input class="rounded text-primary focus:ring-primary border-outline-variant" type="checkbox"/>
-</th>
-<th class="p-4 font-semibold">Judul Materi</th>
-<th class="p-4 font-semibold">Mata Pelajaran</th>
-<th class="p-4 font-semibold">Kelas</th>
-<th class="p-4 font-semibold">Status</th>
-<th class="p-4 font-semibold">Tgl Dibuat</th>
-<th class="p-4 font-semibold text-right">Aksi</th>
-</tr>
-</thead>
-<tbody class="divide-y divide-surface-container text-body-md">
-@forelse($materiList as $materi)
-<tr class="hover:bg-surface/50 transition-colors group">
-<td class="p-4 text-center">
-<input class="rounded text-primary focus:ring-primary border-outline-variant" type="checkbox"/>
-</td>
-<td class="p-4">
-<div class="flex items-center gap-3">
-<div class="w-10 h-10 rounded-lg bg-primary-container flex items-center justify-center text-on-primary-container">
-<span class="material-symbols-outlined">menu_book</span>
-</div>
-<div>
-<p class="font-medium text-on-surface group-hover:text-primary transition-colors">{{ $materi->judul }}</p>
-<p class="text-xs text-on-surface-variant">Modul Pembelajaran</p>
-</div>
-</div>
-</td>
-<td class="p-4 text-on-surface-variant">{{ $materi->mata_pelajaran->nama_mapel }}</td>
-<td class="p-4">
-<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-container-high text-on-surface">Kelas {{ $materi->kelas->tingkat }}</span>
-</td>
-<td class="p-4">
-<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-fixed text-on-primary-fixed-variant border border-primary/20">
-<span class="w-1.5 h-1.5 bg-primary rounded-full mr-1.5"></span> Aktif
-</span>
-</td>
-<td class="p-4 text-on-surface-variant text-sm">{{ $materi->created_at->format('d M Y') }}</td>
-<td class="p-4 text-right">
-<div class="flex items-center justify-end gap-2">
-<button class="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded-md transition-colors" title="Edit">
-<span class="material-symbols-outlined text-sm">edit</span>
-</button>
-<button class="p-1.5 text-on-surface-variant hover:text-error hover:bg-error-container rounded-md transition-colors" title="Hapus">
-<span class="material-symbols-outlined text-sm">delete</span>
-</button>
-</div>
-</td>
-</tr>
-@empty
-<tr><td colspan="7" class="p-4 text-center text-on-surface-variant">Belum ada materi.</td></tr>
-@endforelse
-</tbody>
-</table>
-</div>
-<!-- Pagination -->
-<div class="p-4 border-t border-surface-container flex items-center justify-between bg-white text-sm text-on-surface-variant">
-<div>Menampilkan 1-3 dari 24 materi</div>
-<div class="flex items-center gap-1">
-<button class="p-1 border border-outline-variant rounded hover:bg-surface-container disabled:opacity-50" disabled="">
-<span class="material-symbols-outlined text-sm">chevron_left</span>
-</button>
-<button class="w-8 h-8 flex items-center justify-center border border-primary bg-primary-container text-on-primary-container rounded font-medium">1</button>
-<button class="w-8 h-8 flex items-center justify-center border border-outline-variant rounded hover:bg-surface-container">2</button>
-<button class="w-8 h-8 flex items-center justify-center border border-outline-variant rounded hover:bg-surface-container">3</button>
-<span class="px-2">...</span>
-<button class="p-1 border border-outline-variant rounded hover:bg-surface-container">
-<span class="material-symbols-outlined text-sm">chevron_right</span>
-</button>
-</div>
-</div>
-</div>
-</main>
-</div>
-<!-- BottomNavBar (Predicted & Rendered for Mobile) -->
-<nav class="lg:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-2 pb-safe bg-surface-container-lowest dark:bg-inverse-surface shadow-[0_-4px_10px_rgba(0,0,0,0.05)] border-t border-outline-variant rounded-t-xl">
-<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant hover:text-primary transition-colors py-1 w-16" href="#">
-<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 0;">home</span>
-<span class="font-label-sm text-[10px]">Beranda</span>
-</a>
-<a class="flex flex-col items-center justify-center bg-primary-container dark:bg-primary text-on-primary-container dark:text-on-primary rounded-full px-4 py-1.5 transition-transform duration-200" href="#">
-<span class="material-symbols-outlined mb-0.5" style="font-variation-settings: 'FILL' 1;">book</span>
-<span class="font-label-sm text-[10px] font-bold">Materi</span>
-</a>
-<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant hover:text-primary transition-colors py-1 w-16" href="#">
-<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 0;">task</span>
-<span class="font-label-sm text-[10px]">Tugas</span>
-</a>
-<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant hover:text-primary transition-colors py-1 w-16" href="#">
-<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 0;">groups</span>
-<span class="font-label-sm text-[10px]">Forum</span>
-</a>
-</nav>
+
 <!-- AI Generate Modal -->
 <div x-data="{ 
     open: false, 
     loading: false, 
     topik: '', 
     kelas: '', 
+    mapel_id: '',
     result: null,
     async generate() {
         if(!this.topik || !this.kelas) return;
@@ -349,7 +138,7 @@
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': '{{ csrf_token() }}'
                 },
-                body: JSON.stringify({ topik: this.topik, kelas: this.kelas })
+                body: JSON.stringify({ topik: this.topik, kelas_id: this.kelas })
             });
             const data = await response.json();
             if(data.success) {
@@ -359,6 +148,42 @@
             }
         } catch(e) {
             alert('Error occurred');
+        } finally {
+            this.loading = false;
+        }
+    },
+    async saveMateri() {
+        if(!this.result || !this.mapel_id) {
+            alert('Silakan pilih Mata Pelajaran terlebih dahulu!');
+            return;
+        }
+        this.loading = true;
+        try {
+            const response = await fetch('{{ route('guru.materi.store') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({ 
+                    judul: this.result.judul, 
+                    konten: this.result.konten_html,
+                    kelas_id: this.kelas,
+                    mata_pelajaran_id: this.mapel_id
+                })
+            });
+            const data = await response.json();
+            if(data.success) {
+                alert('Materi berhasil disimpan!');
+                this.open = false;
+                this.result = null;
+                window.location.reload();
+            } else {
+                alert(data.message || 'Error occurred');
+            }
+        } catch(e) {
+            alert('Terjadi kesalahan saat menyimpan materi');
         } finally {
             this.loading = false;
         }
@@ -373,14 +198,14 @@
         <div x-show="!result" class="space-y-4">
             <div>
                 <label class="block text-sm font-medium mb-1">Topik Materi</label>
-                <input x-model="topik" type="text" class="w-full border-outline-variant rounded-lg p-2" placeholder="Cth: Sistem Tata Surya">
+                <input x-model="topik" type="text" class="w-full border-outline-variant rounded-lg p-2 focus:ring-primary focus:border-primary" placeholder="Cth: Sistem Tata Surya">
             </div>
             <div>
                 <label class="block text-sm font-medium mb-1">Kelas</label>
-                <select x-model="kelas" class="w-full border-outline-variant rounded-lg p-2">
+                <select x-model="kelas" class="w-full border-outline-variant rounded-lg p-2 focus:ring-primary focus:border-primary">
                     <option value="">Pilih Kelas</option>
-                    @foreach($kelasList as $k)
-                        <option value="{{ $k->tingkat }}">{{ $k->nama_kelas }} (Tingkat {{ $k->tingkat }})</option>
+                    @foreach($kelasList ?? [] as $k)
+                        <option value="{{ $k->id }}">{{ $k->nama_kelas }} (Tingkat {{ $k->tingkat }})</option>
                     @endforeach
                 </select>
             </div>
@@ -394,13 +219,27 @@
         <div x-show="result" class="space-y-4">
             <div class="p-4 bg-surface-container-low rounded-lg border border-primary-container">
                 <h4 class="font-bold text-lg mb-2" x-text="result?.judul"></h4>
-                <div class="text-sm prose" x-html="result?.konten_html"></div>
+                <div class="text-sm prose max-w-none" x-html="result?.konten_html"></div>
             </div>
+            
+            <div>
+                <label class="block text-sm font-medium mb-1">Pilih Mata Pelajaran (Wajib untuk menyimpan)</label>
+                <select x-model="mapel_id" class="w-full border-outline-variant rounded-lg p-2 focus:ring-primary focus:border-primary">
+                    <option value="">Pilih Mapel</option>
+                    @foreach($mapelList ?? [] as $m)
+                        <option value="{{ $m->id }}">{{ $m->nama_mapel }}</option>
+                    @endforeach
+                </select>
+            </div>
+            
             <div class="flex gap-2">
-                <button @click="open = false; result = null; topik = ''; kelas = ''" class="flex-1 py-2 bg-surface-container text-on-surface rounded-lg">Tutup</button>
-                <button class="flex-1 py-2 bg-primary text-on-primary rounded-lg">Simpan Materi</button>
+                <button @click="open = false; result = null; topik = ''; kelas = ''; mapel_id = ''" class="flex-1 py-2 bg-surface-container text-on-surface rounded-lg hover:bg-surface-container-high transition-colors">Tutup</button>
+                <button @click="saveMateri()" :disabled="loading || !mapel_id" class="flex-1 py-2 bg-primary text-on-primary rounded-lg hover:bg-primary-container transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+                    <span x-show="loading" class="material-symbols-outlined animate-spin text-sm">sync</span>
+                    Simpan Materi
+                </button>
             </div>
         </div>
     </div>
 </div>
-</body></html>
+@endsection

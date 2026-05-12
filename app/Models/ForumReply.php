@@ -4,4 +4,9 @@ use Illuminate\Database\Eloquent\Model;
 class ForumReply extends Model {
     protected $table = "forum_replies";
     protected $guarded = [];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }

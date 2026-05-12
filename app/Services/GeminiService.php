@@ -17,8 +17,7 @@ class GeminiService
     public function generateKuis($materiText, $jumlahSoal = 5)
     {
         $prompt = "Buatkan kuis pilihan ganda berjumlah {$jumlahSoal} soal berdasarkan materi berikut:\n\n{$materiText}\n\n"
-                . "Keluarkan output HANYA dalam format JSON array yang valid, tanpa teks lain di sekitarnya. "
-                . "Format array of object: [ { \"pertanyaan\": \"...\", \"opsi_a\": \"...\", \"opsi_b\": \"...\", \"opsi_c\": \"...\", \"opsi_d\": \"...\", \"jawaban_benar\": \"A/B/C/D\" } ]";
+                . "Format JSON array of objects: [ { \"pertanyaan\": \"...\", \"opsi_a\": \"...\", \"opsi_b\": \"...\", \"opsi_c\": \"...\", \"opsi_d\": \"...\", \"jawaban_benar\": \"A/B/C/D\" } ]";
 
         return $this->callGemini($prompt);
     }
@@ -26,8 +25,7 @@ class GeminiService
     public function generateRancanganMateri($topik, $kelas)
     {
         $prompt = "Buatkan rancangan materi pembelajaran terstruktur untuk anak SMP kelas {$kelas} dengan topik '{$topik}'.\n"
-                . "Keluarkan output HANYA dalam format JSON object tunggal yang valid.\n"
-                . "Format: { \"judul\": \"...\", \"konten_html\": \"...\" }";
+                . "Format JSON object: { \"judul\": \"...\", \"konten_html\": \"... (isi materi lengkap dengan tag HTML p, b, ul, li)\" }";
 
         return $this->callGemini($prompt);
     }
@@ -35,9 +33,9 @@ class GeminiService
     protected function callGemini($prompt)
     {
         try {
-            $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={$this->apiKey}";
+            $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={$this->apiKey}";
             
-            $response = Http::post($url, [
+            $response = Http::withoutVerifying()->post($url, [
                 'contents' => [
                     [
                         'parts' => [
@@ -55,9 +53,23 @@ class GeminiService
                 $result = $response->json();
                 if (isset($result['candidates'][0]['content']['parts'][0]['text'])) {
                     $text = $result['candidates'][0]['content']['parts'][0]['text'];
-                    // Bersihkan backtick jika gemini masih membandel memberikan markdown code block
-                    $text = str_replace(['```json', '```'], '', $text);
-                    return json_decode(trim($text), true);
+                    
+                    // Cleanup potential markdown artifacts even with JSON mode
+                    $text = trim($text);
+                    if (strpos($text, '```json') === 0) {
+                        $text = substr($text, 7);
+                    }
+                    if (substr($text, -3) === '```') {
+                        $text = substr($text, 0, -3);
+                    }
+                    $text = trim($text);
+
+                    $decoded = json_decode($text, true);
+                    if (json_last_error() === JSON_ERROR_NONE) {
+                        return $decoded;
+                    }
+
+                    Log::error('Gemini JSON Decode Error: ' . json_last_error_msg(), ['text' => $text]);
                 }
             }
             

@@ -23,7 +23,8 @@ class ForumController extends Controller
         }
 
         $threads = $query->latest()->get();
-        return view('forum.index', compact('threads', 'user'));
+        $mapelList = MataPelajaran::all();
+        return view('forum.index', compact('threads', 'user', 'mapelList'));
     }
 
     public function like($id)
@@ -62,5 +63,26 @@ class ForumController extends Controller
         ]);
 
         return back();
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'judul' => 'required|string|max:255',
+            'konten' => 'required|string',
+            'mata_pelajaran_id' => 'required|exists:mata_pelajaran,id',
+        ]);
+
+        $user = Auth::user();
+        
+        ForumThread::create([
+            'user_id' => $user->id,
+            'kelas_id' => $user->kelas_id,
+            'mata_pelajaran_id' => $request->mata_pelajaran_id,
+            'judul' => $request->judul,
+            'konten' => $request->konten,
+        ]);
+
+        return back()->with('success', 'Topik berhasil dibuat!');
     }
 }

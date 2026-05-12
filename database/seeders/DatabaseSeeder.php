@@ -57,7 +57,7 @@ class DatabaseSeeder extends Seeder
         for ($i = 1; $i <= 5; $i++) {
             $siswas[] = User::create([
                 'name' => 'Siswa 7A-' . $i,
-                'username' => '001002003' . $i, // 10 digit NISN dummy
+                'username' => '001002003' . $i,
                 'password' => Hash::make('password'),
                 'role' => 'siswa',
                 'kelas_id' => $kelas[0]->id
@@ -94,50 +94,63 @@ class DatabaseSeeder extends Seeder
         ]);
         $siswas[] = $agus;
 
-        // Dummy Data untuk Algoritma (Materi, Kuis, Log Aktivitas) di Kelas 9A
-        $kelas9A = $kelas[2];
-        $guruMath = $gurus[0];
-        $mapelMath = $mapel[0];
+        // --- DISTRIBUSI MATERI & KUIS UNTUK SEMUA KELAS ---
+        foreach ($kelas as $k) {
+            foreach ($mapel as $m) {
+                // Buat 1 Materi per Mapel per Kelas
+                $materi = Materi::create([
+                    'judul' => 'Materi ' . $m->nama_mapel . ' Kelas ' . $k->nama_kelas,
+                    'konten' => '<p>Ini adalah konten materi ' . $m->nama_mapel . ' untuk kelas ' . $k->nama_kelas . '.</p>',
+                    'mata_pelajaran_id' => $m->id,
+                    'kelas_id' => $k->id,
+                    'guru_id' => $gurus[rand(0, 4)]->id
+                ]);
 
-        // Buat 3 Materi Matematika untuk Kelas 9A
-        $materi1 = Materi::create([
-            'judul' => 'Aljabar Lanjut',
-            'konten' => 'Isi materi aljabar lanjut',
-            'mata_pelajaran_id' => $mapelMath->id,
-            'kelas_id' => $kelas9A->id,
-            'guru_id' => $guruMath->id
-        ]);
-        $materi2 = Materi::create([
-            'judul' => 'Geometri Ruang',
-            'konten' => 'Isi materi geometri',
-            'mata_pelajaran_id' => $mapelMath->id,
-            'kelas_id' => $kelas9A->id,
-            'guru_id' => $guruMath->id
-        ]);
-        $materi3 = Materi::create([
-            'judul' => 'Statistika Dasar',
-            'konten' => 'Isi materi statistika',
-            'mata_pelajaran_id' => $mapelMath->id,
-            'kelas_id' => $kelas9A->id,
-            'guru_id' => $guruMath->id
-        ]);
+                // Buat 1 Kuis untuk materi tersebut
+                $kuis = Kuis::create([
+                    'judul' => 'Kuis ' . $m->nama_mapel . ' Kelas ' . $k->nama_kelas,
+                    'deskripsi' => 'Evaluasi materi ' . $m->nama_mapel,
+                    'materi_id' => $materi->id,
+                    'mata_pelajaran_id' => $m->id,
+                    'kelas_id' => $k->id,
+                    'guru_id' => $materi->guru_id
+                ]);
 
-        // Interaksi Dummy (Implicit Feedback) untuk Siswa Lain di Kelas 9A
-        // Siswa lain menyukai Aljabar dan Geometri
-        foreach ([$siswas[10], $siswas[11], $siswas[12]] as $s) {
-            LogAktivitas::create(['user_id' => $s->id, 'jenis_aktivitas' => 'baca_materi', 'item_id' => $materi1->id, 'durasi' => 300]);
-            LogAktivitas::create(['user_id' => $s->id, 'jenis_aktivitas' => 'baca_materi', 'item_id' => $materi2->id, 'durasi' => 250]);
+                // Buat 1 Tugas untuk materi tersebut
+                \App\Models\Tugas::create([
+                    'judul' => 'Tugas ' . $m->nama_mapel . ' Kelas ' . $k->nama_kelas,
+                    'deskripsi' => 'Silakan kerjakan ringkasan materi ' . $m->nama_mapel . ' dan kumpulkan dalam format PDF.',
+                    'mata_pelajaran_id' => $m->id,
+                    'kelas_id' => $k->id,
+                    'guru_id' => $materi->guru_id,
+                    'tenggat_waktu' => now()->addDays(7)
+                ]);
+
+                // Tambahkan 2 soal dummy
+                SoalKuis::create([
+                    'kuis_id' => $kuis->id,
+                    'pertanyaan' => 'Apa ibukota Indonesia?',
+                    'opsi_a' => 'Jakarta', 'opsi_b' => 'Surabaya', 'opsi_c' => 'Bandung', 'opsi_d' => 'Medan',
+                    'jawaban_benar' => 'A', 'bobot' => 10
+                ]);
+                SoalKuis::create([
+                    'kuis_id' => $kuis->id,
+                    'pertanyaan' => '2 + 2 = ?',
+                    'opsi_a' => '3', 'opsi_b' => '4', 'opsi_c' => '5', 'opsi_d' => '6',
+                    'jawaban_benar' => 'B', 'bobot' => 10
+                ]);
+            }
         }
 
-        // Interaksi Dummy untuk agus_test
-        // Agus test hanya baca materi 1 (Aljabar)
-        LogAktivitas::create([
-            'user_id' => $agus->id,
-            'jenis_aktivitas' => 'baca_materi',
-            'item_id' => $materi1->id,
-            'durasi' => 320
-        ]);
-
-        // Karena Agus punya similarity dengan siswa lain (sama-sama baca materi 1), algoritma nanti seharusnya merekomendasikan materi 2 (Geometri).
+        // Interaksi Dummy untuk agus_test agar Collaborative Filtering jalan
+        $materiAgus = Materi::where('kelas_id', $agus->kelas_id)->first();
+        if ($materiAgus) {
+            LogAktivitas::create([
+                'user_id' => $agus->id,
+                'jenis_aktivitas' => 'baca_materi',
+                'item_id' => $materiAgus->id,
+                'durasi' => 300
+            ]);
+        }
     }
 }

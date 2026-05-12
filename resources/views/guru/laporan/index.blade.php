@@ -1,52 +1,72 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Laporan Progres Siswa - Guru</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
-</head>
-<body class="bg-[#f8f9ff] text-[#0b1c30] font-['Inter'] antialiased p-6">
-    <div class="max-w-6xl mx-auto">
-        <div class="flex justify-between items-center mb-8">
-            <h1 class="text-3xl font-bold text-[#006948]">Laporan Progres Siswa</h1>
-            <a href="{{ route('guru.dashboard') }}" class="text-[#006948] hover:underline font-semibold mt-2">Kembali ke Dashboard</a>
-        </div>
+@extends('layouts.guru')
 
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <table class="w-full text-left">
-                <thead class="bg-gray-50 border-b border-gray-200">
-                    <tr>
-                        <th class="p-4 font-semibold text-gray-600">Nama Siswa</th>
-                        <th class="p-4 font-semibold text-gray-600">Kelas</th>
-                        <th class="p-4 font-semibold text-gray-600">Rata-rata Kuis</th>
-                        <th class="p-4 font-semibold text-gray-600">Total Aktivitas (Materi & Forum)</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-200">
-                    @forelse($siswa as $s)
-                        <tr class="hover:bg-gray-50">
-                            <td class="p-4 font-medium text-[#0b1c30]">{{ $s->name }}</td>
-                            <td class="p-4 text-gray-600">{{ $s->kelas->nama_kelas ?? '-' }}</td>
-                            <td class="p-4 font-bold text-[#006948]">
-                                @php
-                                    $avg = $s->hasil_kuis->avg('nilai') ?? 0;
-                                @endphp
-                                {{ round($avg, 2) }}
-                            </td>
-                            <td class="p-4 text-gray-600">
-                                {{ $s->log_aktivitas->count() }} Aktivitas
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="4" class="p-4 text-center text-gray-500">Belum ada data siswa di kelas yang Anda ajar.</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
+@section('title', 'Laporan Progres Siswa - Guru')
+@section('page_title', 'Laporan Progres Siswa')
+
+@section('content')
+<div class="mb-lg flex flex-col md:flex-row md:items-end justify-between gap-4">
+    <div>
+        <h2 class="font-headline-xl text-headline-xl text-on-surface">Laporan Progres Siswa</h2>
+        <p class="font-body-lg text-body-lg text-on-surface-variant mt-2">Pantau rata-rata nilai kuis dan keaktifan siswa di kelas yang Anda ampu.</p>
     </div>
-</body>
-</html>
+    <div class="flex gap-4">
+        <button onclick="window.print()" class="flex items-center gap-2 bg-surface-container-lowest text-primary border border-primary px-4 py-2 rounded-lg font-bold hover:bg-surface-container-low transition-colors shadow-sm">
+            <span class="material-symbols-outlined">print</span>
+            Cetak Laporan
+        </button>
+    </div>
+</div>
+
+<div class="bg-surface-container-lowest rounded-xl shadow-[0_2px_10px_0_rgba(0,105,72,0.05)] border border-surface-container overflow-hidden">
+    <div class="p-4 border-b border-surface-container bg-surface flex justify-between items-center">
+        <h3 class="font-headline-md text-on-surface">Rekapitulasi Nilai & Aktivitas</h3>
+        <span class="text-sm text-on-surface-variant">Tahun Ajaran Aktif</span>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-surface-container-low text-on-surface-variant font-label-lg text-label-lg uppercase tracking-wider text-xs border-b border-surface-container">
+                    <th class="p-4 font-semibold">Nama Siswa</th>
+                    <th class="p-4 font-semibold text-center">Kelas</th>
+                    <th class="p-4 font-semibold text-center">Rata-rata Kuis</th>
+                    <th class="p-4 font-semibold text-center">Total Aktivitas</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-surface-container text-body-md">
+                @forelse($siswa ?? [] as $s)
+                    <tr class="hover:bg-surface/50 transition-colors">
+                        <td class="p-4">
+                            <div class="flex items-center gap-3">
+                                <img src="https://ui-avatars.com/api/?name={{ urlencode($s->username) }}&background=006948&color=fff&rounded=true" class="w-8 h-8 rounded-full">
+                                <span class="font-medium text-on-surface">{{ $s->name }}</span>
+                            </div>
+                        </td>
+                        <td class="p-4 text-center text-on-surface-variant">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-container-high text-on-surface">{{ $s->kelas->nama_kelas ?? '-' }}</span>
+                        </td>
+                        <td class="p-4 text-center font-bold text-primary">
+                            @php
+                                $avg = $s->hasil_kuis->avg('nilai') ?? 0;
+                            @endphp
+                            {{ round($avg, 2) }}
+                        </td>
+                        <td class="p-4 text-center text-on-surface-variant">
+                            <span class="flex items-center justify-center gap-1">
+                                <span class="material-symbols-outlined text-[18px]">local_fire_department</span>
+                                {{ $s->log_aktivitas->count() }}
+                            </span>
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="4" class="p-4 text-center text-on-surface-variant py-8">
+                            <span class="material-symbols-outlined text-4xl mb-2">groups</span>
+                            <p>Belum ada data siswa di kelas yang Anda ajar.</p>
+                        </td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+</div>
+@endsection

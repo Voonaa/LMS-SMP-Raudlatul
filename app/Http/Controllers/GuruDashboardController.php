@@ -33,10 +33,11 @@ class GuruDashboardController extends Controller
     {
         $request->validate([
             'topik' => 'required|string',
-            'kelas' => 'required|string'
+            'kelas_id' => 'required|exists:kelas,id'
         ]);
 
-        $result = $this->gemini->generateRancanganMateri($request->topik, $request->kelas);
+        $kelas = \App\Models\Kelas::findOrFail($request->kelas_id);
+        $result = $this->gemini->generateRancanganMateri($request->topik, $kelas->tingkat);
         
         if ($result && isset($result['judul']) && isset($result['konten_html'])) {
             return response()->json([

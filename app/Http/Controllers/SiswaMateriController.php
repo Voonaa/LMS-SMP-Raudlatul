@@ -4,16 +4,29 @@ namespace App\Http\Controllers;
 
 use App\Models\Materi;
 use App\Models\LogAktivitas;
+use App\Models\MataPelajaran;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class SiswaMateriController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
-        $materis = Materi::where('kelas_id', $user->kelas_id)->with('mata_pelajaran', 'guru')->get();
-        return view('siswa.materi.index', compact('materis'));
+        $query = Materi::where('kelas_id', $user->kelas_id)->with('mata_pelajaran', 'guru');
+
+        if ($request->filled('search')) {
+            $query->where('judul', 'like', '%' . $request->search . '%');
+        }
+
+        if ($request->filled('mapel_id')) {
+            $query->where('mata_pelajaran_id', $request->mapel_id);
+        }
+
+        $materis = $query->get();
+        $mapelList = MataPelajaran::all();
+
+        return view('siswa.materi.index', compact('materis', 'mapelList'));
     }
 
     public function show($id)

@@ -5,16 +5,29 @@ namespace App\Http\Controllers;
 use App\Models\Kuis;
 use App\Models\HasilKuis;
 use App\Models\LogAktivitas;
+use App\Models\MataPelajaran;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class SiswaKuisController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
-        $kuis = Kuis::where('kelas_id', $user->kelas_id)->with('mata_pelajaran')->get();
-        return view('siswa.kuis.index', compact('kuis'));
+        $query = Kuis::where('kelas_id', $user->kelas_id)->with('mata_pelajaran');
+
+        if ($request->filled('search')) {
+            $query->where('judul', 'like', '%' . $request->search . '%');
+        }
+
+        if ($request->filled('mapel_id')) {
+            $query->where('mata_pelajaran_id', $request->mapel_id);
+        }
+
+        $kuis = $query->get();
+        $mapelList = MataPelajaran::all();
+
+        return view('siswa.kuis.index', compact('kuis', 'mapelList'));
     }
 
     public function show($id)
