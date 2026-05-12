@@ -120,7 +120,17 @@
                     </div>
                 </a>
                 @empty
-                <p class="text-sm text-on-surface-variant col-span-2">Belum ada rekomendasi materi saat ini.</p>
+                {{-- Empty State: tampil saat tidak ada rekomendasi --}}
+                <div class="col-span-2 flex flex-col items-center justify-center py-8 text-center">
+                    <div class="w-16 h-16 bg-surface-container rounded-full flex items-center justify-center mb-4">
+                        <span class="material-symbols-outlined text-3xl text-on-surface-variant">auto_awesome</span>
+                    </div>
+                    <p class="font-semibold text-on-surface mb-1">Rekomendasi Sedang Dipersiapkan</p>
+                    <p class="text-sm text-on-surface-variant max-w-xs">
+                        Belum ada materi yang tersedia untuk rekomendasi saat ini.
+                        Silakan cek menu <a href="{{ route('siswa.materi.index') }}" class="text-primary underline font-medium">Materi</a> secara berkala.
+                    </p>
+                </div>
                 @endforelse
             </div>
         </div>

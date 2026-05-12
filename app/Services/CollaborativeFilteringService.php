@@ -72,7 +72,16 @@ class CollaborativeFilteringService
         }
 
         if (empty($userItems) || empty($itemUserMatrix)) {
-            // COLD-START: Gunakan hasil diagnostik jika ada, fallback ke random
+            // COLD-START: User baru → gunakan sinyal diagnostik
+            return $this->getColdStartRecommendations($userId, $kelasId, $limit);
+        }
+
+        // Cek apakah user sudah melihat SEMUA materi kelas
+        $allClassMateriIds = Materi::where('kelas_id', $kelasId)->pluck('id')->toArray();
+        $unseenClassMateri = array_diff($allClassMateriIds, array_keys($userItems));
+
+        if (empty($unseenClassMateri)) {
+            // User sudah lihat semua materi kelas → re-recommend via cold-start (urut kelemahan)
             return $this->getColdStartRecommendations($userId, $kelasId, $limit);
         }
 
@@ -114,13 +123,8 @@ class CollaborativeFilteringService
         $recommendedItemIds = array_slice(array_keys($predictions), 0, $limit);
 
         if (empty($recommendedItemIds)) {
-            $seenIds = array_keys($userItems);
-            // GUARD: fallback hanya materi kelas sendiri
-            return Materi::where('kelas_id', $kelasId)
-                ->whereNotIn('id', $seenIds)
-                ->inRandomOrder()
-                ->limit($limit)
-                ->get();
+            // Predictions kosong → cold-start sebagai fallback terakhir
+            return $this->getColdStartRecommendations($userId, $kelasId, $limit);
         }
 
         // GUARD UTAMA: Walau CF menghitung similarity dari semua item,
@@ -128,7 +132,8 @@ class CollaborativeFilteringService
         // Ini mencegah materi kelas lain masuk ke rekomendasi.
         $placeholders = implode(',', array_fill(0, count($recommendedItemIds), '?'));
         return Materi::whereIn('id', $recommendedItemIds)
-            ->where('kelas_id', $kelasId)  // <-- CONTEXT-AWARE PRIVACY FILTER
+            ->where('kelas_id', $kelasId)          // CONTEXT-AWARE PRIVACY
+            ->with('mata_pelajaran')                // eager-load untuk tampilan
             ->orderByRaw("FIELD(id, $placeholders)", $recommendedItemIds)
             ->get();
     }
@@ -167,46 +172,71 @@ class CollaborativeFilteringService
     }
 
     /**
-     * Cold-Start Recommendation: Gunakan hasil kuis diagnostik sebagai sinyal awal.
+     * Cold-Start Recommendation: Gunakan sinyal diagnostik untuk rekomendasi awal.
      *
-     * Cara kerja:
-     * 1. Ambil log_aktivitas siswa yang berasal dari kuis diagnostik (durasi tinggi = nilai rendah)
-     * 2. Sortir berdasarkan durasi tertinggi (= mapel paling butuh bantuan)
-     * 3. Rekomendasikan materi dari mapel tersebut di kelas siswa
-     *
-     * Dipanggil oleh getRecommendations() jika user tidak punya cukup data CF normal.
+     * Algoritma:
+     * 1. Baca semua log baca_materi user → grup berdasarkan mata_pelajaran_id
+     * 2. Jumlahkan durasi per mapel (durasi tinggi = nilai rendah di diagnostik)
+     * 3. Urutkan descending → mapel dengan durasi total tertinggi = paling lemah
+     * 4. Ambil materi dari mapel terlemah untuk kelas siswa
      */
     public function getColdStartRecommendations($userId, $kelasId, $limit = 6)
     {
-        // Ambil log diagnostik siswa (durasi tinggi = nilai rendah di mapel itu)
-        $diagnostikLogs = LogAktivitas::where('user_id', $userId)
+        // Ambil semua log baca_materi user ini (termasuk sinyal diagnostik)
+        $logs = LogAktivitas::where('user_id', $userId)
             ->where('jenis_aktivitas', 'baca_materi')
-            ->where('durasi', '>=', 60)  // Semua log diagnostik punya durasi >= 60
-            ->orderByDesc('durasi')       // Prioritas: durasi tertinggi = mapel paling lemah
-            ->limit(5)
-            ->get();
+            ->get(['item_id', 'durasi']);
 
-        if ($diagnostikLogs->isEmpty()) {
-            return Materi::where('kelas_id', $kelasId)->inRandomOrder()->limit($limit)->get();
+        if ($logs->isEmpty()) {
+            // Benar-benar tidak ada data sama sekali → tampilkan semua materi kelas
+            return Materi::where('kelas_id', $kelasId)
+                ->with('mata_pelajaran')
+                ->inRandomOrder()
+                ->limit($limit)
+                ->get();
         }
 
-        // Kumpulkan materi yang berkaitan dengan mapel terlemah
-        $recommendations = collect();
-        $added = [];
+        // Kumpulkan durasi per mata_pelajaran_id (join via materi)
+        $durasiPerMapel = [];  // [mapel_id => total_durasi]
 
-        foreach ($diagnostikLogs as $log) {
-            // Cari mata_pelajaran_id dari materi yang ada di log
+        foreach ($logs as $log) {
             $materi = Materi::find($log->item_id);
             if (!$materi) continue;
 
-            $mapelId = $materi->mata_pelajaran_id;
+            // Pastikan materi ini milik kelas yang sama (Context-Aware Privacy)
+            if ((int) $materi->kelas_id !== (int) $kelasId) continue;
 
-            // Ambil materi di mapel yang sama untuk kelas ini
-            $materisMapel = Materi::where('kelas_id', $kelasId)
+            $mapelId = $materi->mata_pelajaran_id;
+            if (!isset($durasiPerMapel[$mapelId])) {
+                $durasiPerMapel[$mapelId] = 0;
+            }
+            $durasiPerMapel[$mapelId] += (int) ($log->durasi ?? 0);
+        }
+
+        // Jika tidak ada log valid untuk kelas ini → fallback semua materi kelas
+        if (empty($durasiPerMapel)) {
+            return Materi::where('kelas_id', $kelasId)
+                ->with('mata_pelajaran')
+                ->inRandomOrder()
+                ->limit($limit)
+                ->get();
+        }
+
+        // Urutkan descending: durasi tertinggi = mapel paling lemah → prioritas pertama
+        arsort($durasiPerMapel);
+
+        $recommendations = collect();
+        $added           = [];
+        $perMapelQuota   = max(1, (int) ceil($limit / count($durasiPerMapel)));
+
+        foreach ($durasiPerMapel as $mapelId => $totalDurasi) {
+            // Ambil materi dari mapel terlemah ini untuk kelas siswa (WAJIB filter kelas_id)
+            $materisMapel = Materi::where('kelas_id', $kelasId)    // <-- CONTEXT-AWARE
                 ->where('mata_pelajaran_id', $mapelId)
                 ->whereNotIn('id', $added)
+                ->with('mata_pelajaran')
                 ->inRandomOrder()
-                ->limit(2)
+                ->limit($perMapelQuota)
                 ->get();
 
             foreach ($materisMapel as $m) {
@@ -219,17 +249,17 @@ class CollaborativeFilteringService
             if ($recommendations->count() >= $limit) break;
         }
 
-        // Jika belum cukup, tambah materi random dari kelas
+        // Jika masih belum cukup → tambah semua materi kelas yang tersisa
         if ($recommendations->count() < $limit) {
             $extra = Materi::where('kelas_id', $kelasId)
                 ->whereNotIn('id', $added)
+                ->with('mata_pelajaran')
                 ->inRandomOrder()
                 ->limit($limit - $recommendations->count())
                 ->get();
             $recommendations = $recommendations->merge($extra);
         }
 
-        return $recommendations->take($limit);
+        return $recommendations->take($limit)->values();
     }
 }
-

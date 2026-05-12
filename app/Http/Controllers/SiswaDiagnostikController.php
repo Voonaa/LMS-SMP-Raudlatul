@@ -7,25 +7,22 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\Kuis;
 use App\Models\HasilKuis;
 use App\Models\LogAktivitas;
-use App\Models\SoalKuis;
 use App\Models\Materi;
 
 class SiswaDiagnostikController extends Controller
 {
-    /**
-     * Tampilkan halaman kuis diagnostik.
-     */
     public function show()
     {
         $user = Auth::user();
 
-        // Jika sudah selesai, redirect ke dashboard
         if ($user->diagnostic_done) {
             return redirect()->route('siswa.dashboard')
                 ->with('info', 'Kuis diagnostik sudah diselesaikan.');
         }
 
-        $kuis = Kuis::where('is_diagnostik', true)->with('soal')->first();
+        $kuis = Kuis::where('is_diagnostik', true)
+            ->with(['soal' => fn($q) => $q->orderBy('mata_pelajaran_id')->orderBy('id')])
+            ->first();
 
         if (!$kuis) {
             return redirect()->route('siswa.dashboard')
@@ -35,13 +32,6 @@ class SiswaDiagnostikController extends Controller
         return view('siswa.diagnostik.show', compact('kuis'));
     }
 
-    /**
-     * Proses jawaban kuis diagnostik.
-     * 1. Hitung nilai total & nilai per mata pelajaran
-     * 2. Simpan ke hasil_kuis
-     * 3. Simpan log_aktivitas per mapel (sinyal CF cold-start)
-     * 4. Set diagnostic_done = true
-     */
     public function submit(Request $request)
     {
         $user = Auth::user();
@@ -55,72 +45,50 @@ class SiswaDiagnostikController extends Controller
             return response()->json(['success' => false, 'message' => 'Kuis tidak ditemukan.'], 404);
         }
 
-        $jawaban = $request->input('jawaban', []);  // [soal_id => 'A/B/C/D']
+        $jawaban    = $request->input('jawaban', []);
+        $totalSoal  = $kuis->soal->count();
+        $totalBenar = 0;
 
-        // ── Hitung skor per mata pelajaran ──
-        $perMapel       = [];  // [mapel_id => ['benar' => 0, 'total' => 0]]
-        $totalBenar     = 0;
-        $totalSoal      = $kuis->soal->count();
+        // ── 1. Hitung skor per mata pelajaran ──────────────────────────────────
+        // Struktur: [mapel_id => ['benar' => N, 'total' => N]]
+        $perMapel = [];
 
         foreach ($kuis->soal as $soal) {
             $mapelId = $soal->mata_pelajaran_id ?? 1;
+
             if (!isset($perMapel[$mapelId])) {
                 $perMapel[$mapelId] = ['benar' => 0, 'total' => 0];
             }
+
             $perMapel[$mapelId]['total']++;
 
-            if (isset($jawaban[$soal->id]) && strtoupper($jawaban[$soal->id]) === $soal->jawaban_benar) {
+            $jawabanSiswa = strtoupper($jawaban[$soal->id] ?? '');
+            if ($jawabanSiswa === $soal->jawaban_benar) {
                 $perMapel[$mapelId]['benar']++;
                 $totalBenar++;
             }
         }
 
-        // Nilai total (0–100)
         $nilaiTotal = $totalSoal > 0 ? round(($totalBenar / $totalSoal) * 100) : 0;
 
-        // ── Simpan ke hasil_kuis ──
+        // ── 2. Simpan HasilKuis ────────────────────────────────────────────────
         HasilKuis::create([
             'user_id' => $user->id,
             'kuis_id' => $kuis->id,
             'nilai'   => $nilaiTotal,
         ]);
 
-        // ── Simpan log_aktivitas per mapel sebagai sinyal CF cold-start ──
-        // Setiap log mewakili "keterlibatan" siswa terhadap mata pelajaran tersebut.
-        // Nilai rendah → prioritas rekomendasi tinggi (cold-start remedial recommendation)
+        // ── 3. Buat sinyal CF ke log_aktivitas ─────────────────────────────────
+        // Untuk SETIAP mata pelajaran di diagnostik, cari materi yang ada
+        // di kelas siswa, lalu buat log dengan durasi sebanding kelemahan.
+        // Format log IDENTIK dengan log membaca materi biasa (jenis_aktivitas='baca_materi').
+        //
+        // Bobot durasi:
+        //   nilai 0   → durasi 300s (sangat lemah → prioritas tinggi di CF)
+        //   nilai 100 → durasi  60s (sudah kuat   → sinyal kecil)
+        //
         $nilaiPerMapel = [];
-        foreach ($perMapel as $mapelId => $skor) {
-            $nilaiMapel = $skor['total'] > 0
-                ? round(($skor['benar'] / $skor['total']) * 100)
-                : 0;
-
-            $nilaiPerMapel[$mapelId] = $nilaiMapel;
-
-            // Bobot durasi: nilai tinggi = sedikit perlu remedial, nilai rendah = banyak perlu remedial
-            // CF akan membaca durasi sebagai "engagement signal"
-            $durasiSignal = max(60, (100 - $nilaiMapel) * 3);  // 0 nilai = 300s signal, 100 nilai = 60s
-
-            // Ambil materi pertama dari mapel ini di kelas siswa
-            $materi = Materi::where('kelas_id', $user->kelas_id)
-                ->where('mata_pelajaran_id', $mapelId)
-                ->first();
-
-            if ($materi) {
-                LogAktivitas::create([
-                    'user_id'         => $user->id,
-                    'jenis_aktivitas' => 'baca_materi',  // CF membaca ini
-                    'item_id'         => $materi->id,
-                    'durasi'          => $durasiSignal,  // Sinyal kebutuhan materi
-                ]);
-            }
-        }
-
-        // ── Set diagnostic_done = true ──
-        $user->diagnostic_done = true;
-        $user->save();
-
-        // ── Identifikasi kelemahan (mapel nilai terendah) ──
-        $mapelNames = [
+        $mapelNames    = [
             1 => 'Matematika',
             2 => 'IPA',
             3 => 'IPS',
@@ -128,19 +96,62 @@ class SiswaDiagnostikController extends Controller
             5 => 'Bahasa Inggris',
         ];
 
-        asort($nilaiPerMapel);
+        foreach ($perMapel as $mapelId => $skor) {
+            $nilaiMapel = $skor['total'] > 0
+                ? round(($skor['benar'] / $skor['total']) * 100)
+                : 0;
+
+            $nilaiPerMapel[$mapelId] = $nilaiMapel;
+
+            // Durasi sinyal: semakin rendah nilai → durasi semakin tinggi
+            // Range: 60s (nilai 100) hingga 300s (nilai 0)
+            $durasiSignal = (int) round(60 + (100 - $nilaiMapel) * 2.4);
+
+            // ── PERBAIKAN KRITIS: Cari SEMUA materi mapel ini di kelas siswa ──
+            // Gunakan kelas_id dari $user (bukan hard-coded), ambil semua materi
+            // mapel tersebut agar CF punya variasi sinyal
+            $materisMapel = Materi::where('kelas_id', $user->kelas_id)
+                ->where('mata_pelajaran_id', $mapelId)
+                ->get(['id']);
+
+            if ($materisMapel->isEmpty()) {
+                // Tidak ada materi mapel ini di kelas → catat tapi skip
+                // (tidak bisa buat sinyal CF tanpa item_id yang valid)
+                continue;
+            }
+
+            // Buat satu log per materi yang tersedia di mapel ini
+            // Identik dengan format log 'baca_materi' biasa:
+            //   user_id, jenis_aktivitas, item_id, durasi
+            foreach ($materisMapel as $materi) {
+                LogAktivitas::create([
+                    'user_id'         => $user->id,
+                    'jenis_aktivitas' => 'baca_materi',   // <-- sama persis dengan log baca materi
+                    'item_id'         => $materi->id,      // <-- materi yang valid di kelas siswa
+                    'durasi'          => $durasiSignal,    // <-- bobot sinyal berdasarkan nilai
+                    // created_at default = now() → CF akan membacanya sebagai aktivitas baru
+                ]);
+            }
+        }
+
+        // ── 4. Set diagnostic_done = true ─────────────────────────────────────
+        $user->diagnostic_done = true;
+        $user->save();
+
+        // ── 5. Identifikasi kelemahan terbesar ────────────────────────────────
+        asort($nilaiPerMapel);  // sort ascending → index 0 = nilai terendah
         $weakestMapelId   = array_key_first($nilaiPerMapel);
         $weakestMapelNama = $mapelNames[$weakestMapelId] ?? 'Mata Pelajaran';
         $nilaiTerendah    = $nilaiPerMapel[$weakestMapelId];
 
         return response()->json([
-            'success'       => true,
-            'nilai_total'   => $nilaiTotal,
-            'nilai_per_mapel' => $nilaiPerMapel,
-            'weakest_mapel' => $weakestMapelNama,
-            'nilai_terendah' => $nilaiTerendah,
-            'message'       => "Kuis selesai! Nilai kamu: {$nilaiTotal}/100. Rekomendasi akan difokuskan pada: {$weakestMapelNama}.",
-            'redirect'      => route('siswa.dashboard'),
+            'success'          => true,
+            'nilai_total'      => $nilaiTotal,
+            'nilai_per_mapel'  => $nilaiPerMapel,
+            'weakest_mapel'    => $weakestMapelNama,
+            'nilai_terendah'   => $nilaiTerendah,
+            'message'          => "Kuis selesai! Nilai kamu: {$nilaiTotal}/100. Rekomendasi akan difokuskan pada: {$weakestMapelNama}.",
+            'redirect'         => route('siswa.dashboard'),
         ]);
     }
 }
