@@ -117,6 +117,7 @@ Route::middleware('auth')->group(function () {
         })->name('admin.dashboard');
 
         Route::get('/admin/testing/mae', [TestingController::class, 'mae'])->name('admin.testing.mae');
+        Route::get('/admin/testing/mae/export', [TestingController::class, 'export'])->name('admin.testing.mae.export');
         
         // Kelola Pengguna
         Route::get('/admin/user/template', [AdminUserController::class, 'downloadTemplate'])->name('admin.user.template');
