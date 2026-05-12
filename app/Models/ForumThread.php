@@ -19,4 +19,9 @@ class ForumThread extends Model {
     {
         return $this->hasMany(ForumReply::class, 'thread_id');
     }
+
+    public function likes()
+    {
+        return $this->morphMany(Like::class, 'likeable');
+    }
 }

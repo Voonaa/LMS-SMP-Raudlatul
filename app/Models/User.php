@@ -52,4 +52,5 @@ class User extends Authenticatable
     public function kelas() { return $this->belongsTo(Kelas::class); }
     public function log_aktivitas() { return $this->hasMany(LogAktivitas::class); }
     public function hasil_kuis() { return $this->hasMany(HasilKuis::class); }
+    public function point_gamifikasi() { return $this->hasOne(PointGamifikasi::class); }
 }

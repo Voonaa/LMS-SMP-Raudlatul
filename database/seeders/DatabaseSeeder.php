@@ -19,11 +19,17 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. Kelas (3 tingkat)
+        // 1. Kelas (9 total: 7A-7C, 8A-8C, 9A-9C)
         $kelas = [];
         $kelas[] = Kelas::create(['nama_kelas' => '7A', 'tingkat' => 7]);
+        $kelas[] = Kelas::create(['nama_kelas' => '7B', 'tingkat' => 7]);
+        $kelas[] = Kelas::create(['nama_kelas' => '7C', 'tingkat' => 7]);
         $kelas[] = Kelas::create(['nama_kelas' => '8A', 'tingkat' => 8]);
+        $kelas[] = Kelas::create(['nama_kelas' => '8B', 'tingkat' => 8]);
+        $kelas[] = Kelas::create(['nama_kelas' => '8C', 'tingkat' => 8]);
         $kelas[] = Kelas::create(['nama_kelas' => '9A', 'tingkat' => 9]);
+        $kelas[] = Kelas::create(['nama_kelas' => '9B', 'tingkat' => 9]);
+        $kelas[] = Kelas::create(['nama_kelas' => '9C', 'tingkat' => 9]);
 
         // 2. Mata Pelajaran (5 Utama)
         $mapel = [];
@@ -51,46 +57,29 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
-        // 5. Siswa (15) + agus_test
+        // 5. Siswa – masing-masing kelas dapat 5 siswa dummy
         $siswas = [];
-        // 5 siswa di kelas 7A
-        for ($i = 1; $i <= 5; $i++) {
-            $siswas[] = User::create([
-                'name' => 'Siswa 7A-' . $i,
-                'username' => '001002003' . $i,
-                'password' => Hash::make('password'),
-                'role' => 'siswa',
-                'kelas_id' => $kelas[0]->id
-            ]);
-        }
-        // 5 siswa di kelas 8A
-        for ($i = 1; $i <= 5; $i++) {
-            $siswas[] = User::create([
-                'name' => 'Siswa 8A-' . $i,
-                'username' => '002002003' . $i,
-                'password' => Hash::make('password'),
-                'role' => 'siswa',
-                'kelas_id' => $kelas[1]->id
-            ]);
-        }
-        // 4 siswa di kelas 9A
-        for ($i = 1; $i <= 4; $i++) {
-            $siswas[] = User::create([
-                'name' => 'Siswa 9A-' . $i,
-                'username' => '003002003' . $i,
-                'password' => Hash::make('password'),
-                'role' => 'siswa',
-                'kelas_id' => $kelas[2]->id
-            ]);
+        $kelasNames = ['7A','7B','7C','8A','8B','8C','9A','9B','9C'];
+        foreach ($kelas as $idx => $k) {
+            $prefix = str_replace(['A','B','C'], ['1','2','3'], $kelasNames[$idx]);
+            for ($i = 1; $i <= 5; $i++) {
+                $siswas[] = User::create([
+                    'name'     => 'Siswa ' . $kelasNames[$idx] . '-' . $i,
+                    'username' => $prefix . '0000' . $idx . $i,
+                    'password' => Hash::make('password'),
+                    'role'     => 'siswa',
+                    'kelas_id' => $k->id
+                ]);
+            }
         }
 
-        // User khusus: agus_test (Kelas 9A)
+        // User khusus: agus_test (Kelas 9A, index 6)
         $agus = User::create([
-            'name' => 'Agus Test',
+            'name'     => 'Agus Test',
             'username' => '0090090099',
             'password' => Hash::make('password'),
-            'role' => 'siswa',
-            'kelas_id' => $kelas[2]->id
+            'role'     => 'siswa',
+            'kelas_id' => $kelas[6]->id  // 9A = index 6
         ]);
         $siswas[] = $agus;
 
@@ -152,5 +141,9 @@ class DatabaseSeeder extends Seeder
                 'durasi' => 300
             ]);
         }
+
+        $this->call([
+            SyntheticDataSeeder::class,
+        ]);
     }
 }

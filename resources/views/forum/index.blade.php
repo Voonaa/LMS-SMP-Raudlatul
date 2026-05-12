@@ -20,14 +20,37 @@
     <div class="space-y-4">
         @forelse($threads ?? [] as $thread)
         <div class="bg-surface-container-lowest rounded-xl p-6 ambient-shadow border border-surface-container flex gap-4" x-data="{ replyOpen: false }">
-            <div class="flex flex-col items-center gap-1 min-w-[40px]">
-                <form action="{{ route('forum.like', $thread->id) }}" method="POST">
-                    @csrf
-                    <button type="submit" class="p-1 rounded-full hover:bg-surface-container transition-colors text-on-surface-variant">
-                        <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">thumb_up</span>
-                    </button>
-                </form>
-                <span class="font-label-sm font-bold text-primary">{{ $thread->likes ?? 0 }}</span>
+            <div class="flex flex-col items-center gap-1 min-w-[40px]" 
+                 x-data="{ 
+                     liked: {{ $thread->likes()->where('user_id', auth()->id())->exists() ? 'true' : 'false' }}, 
+                     likesCount: {{ $thread->likes()->count() }},
+                     async toggleLike() {
+                         try {
+                             const response = await fetch('{{ route('forum.like') }}', {
+                                 method: 'POST',
+                                 headers: {
+                                     'Content-Type': 'application/json',
+                                     'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                                 },
+                                 body: JSON.stringify({
+                                     likeable_id: {{ $thread->id }},
+                                     likeable_type: 'App\\Models\\ForumThread'
+                                 })
+                             });
+                             const data = await response.json();
+                             if(data.success) {
+                                 this.liked = data.action === 'liked';
+                                 this.likesCount = data.likes_count;
+                             }
+                         } catch (e) {
+                             console.error('Error toggling like:', e);
+                         }
+                     }
+                 }">
+                <button @click="toggleLike()" :class="liked ? 'text-primary' : 'text-on-surface-variant'" class="p-1 rounded-full hover:bg-surface-container transition-colors">
+                    <span class="material-symbols-outlined" :style="liked ? 'font-variation-settings: \'FILL\' 1;' : 'font-variation-settings: \'FILL\' 0;'">thumb_up</span>
+                </button>
+                <span class="font-label-sm font-bold text-primary" x-text="likesCount"></span>
             </div>
             
             <div class="flex-1">

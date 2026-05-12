@@ -22,9 +22,9 @@ class TestingController extends Controller
         // Kita butuh (1) Actual Rating/Score (2) Predicted Rating/Score
         // Karena ini testing, kita ambil sample user 'agus_test'
         
-        $userTest = User::where('username', 'agus_test')->first();
+        $userTest = User::where('username', '0090090099')->first();
         if (!$userTest) {
-            return "User agus_test tidak ditemukan. Harap jalankan Seeder.";
+            return "User agus_test (0090090099) tidak ditemukan. Harap jalankan Seeder.";
         }
 
         // 1. Ambil Interaksi (Actual Score)

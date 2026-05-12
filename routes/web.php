@@ -94,7 +94,7 @@ Route::middleware('auth')->group(function () {
     // Forum (Bisa diakses guru & siswa)
     Route::get('/forum', [ForumController::class, 'index'])->name('forum.index');
     Route::post('/forum', [ForumController::class, 'store'])->name('forum.store');
-    Route::post('/forum/{id}/like', [ForumController::class, 'like'])->name('forum.like');
+    Route::post('/forum/like', [ForumController::class, 'toggleLike'])->name('forum.like');
     Route::post('/forum/{id}/reply', [ForumController::class, 'reply'])->name('forum.reply');
 
     // Leaderboard (API)
@@ -107,15 +107,26 @@ Route::middleware('auth')->group(function () {
     // Route Admin Testing & Management
     Route::middleware('can:admin')->group(function () {
         Route::get('/admin/dashboard', function () {
-            return view('admin.dashboard');
+            $totalSiswa = \App\Models\User::where('role', 'siswa')->count();
+            $totalGuru  = \App\Models\User::where('role', 'guru')->count();
+            $totalMateri = \App\Models\Materi::count();
+            $totalKuis  = \App\Models\Kuis::count();
+            $totalKelas = \App\Models\Kelas::count();
+            $totalAktivitas = \App\Models\LogAktivitas::count();
+            return view('admin.dashboard', compact('totalSiswa', 'totalGuru', 'totalMateri', 'totalKuis', 'totalKelas', 'totalAktivitas'));
         })->name('admin.dashboard');
 
         Route::get('/admin/testing/mae', [TestingController::class, 'mae'])->name('admin.testing.mae');
         
         // Kelola Pengguna
+        Route::get('/admin/user/template', [AdminUserController::class, 'downloadTemplate'])->name('admin.user.template');
+        Route::post('/admin/user/import', [AdminUserController::class, 'import'])->name('admin.user.import');
         Route::get('/admin/user', [AdminUserController::class, 'index'])->name('admin.user.index');
         Route::get('/admin/user/create', [AdminUserController::class, 'create'])->name('admin.user.create');
         Route::post('/admin/user', [AdminUserController::class, 'store'])->name('admin.user.store');
+        Route::get('/admin/user/{id}', [AdminUserController::class, 'show'])->name('admin.user.show');
+        Route::get('/admin/user/{id}/edit', [AdminUserController::class, 'edit'])->name('admin.user.edit');
+        Route::put('/admin/user/{id}', [AdminUserController::class, 'update'])->name('admin.user.update');
         Route::delete('/admin/user/{id}', [AdminUserController::class, 'destroy'])->name('admin.user.destroy');
 
         // Konfigurasi

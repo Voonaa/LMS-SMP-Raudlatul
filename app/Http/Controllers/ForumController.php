@@ -27,18 +27,53 @@ class ForumController extends Controller
         return view('forum.index', compact('threads', 'user', 'mapelList'));
     }
 
-    public function like($id)
+    public function toggleLike(Request $request)
     {
-        $user = Auth::user();
-        $thread = ForumThread::findOrFail($id);
-
-        LogAktivitas::create([
-            'user_id' => $user->id,
-            'jenis_aktivitas' => 'like_forum',
-            'item_id' => $thread->id,
+        $request->validate([
+            'likeable_id' => 'required|integer',
+            'likeable_type' => 'required|string',
         ]);
 
-        return back();
+        $user = Auth::user();
+        $likeable_id = $request->likeable_id;
+        $likeable_type = $request->likeable_type;
+
+        $like = \App\Models\Like::where('user_id', $user->id)
+            ->where('likeable_id', $likeable_id)
+            ->where('likeable_type', $likeable_type)
+            ->first();
+
+        if ($like) {
+            $like->delete();
+            $action = 'unliked';
+            $likesCount = \App\Models\Like::where('likeable_id', $likeable_id)->where('likeable_type', $likeable_type)->count();
+            return response()->json(['success' => true, 'action' => $action, 'likes_count' => $likesCount]);
+        } else {
+            \App\Models\Like::create([
+                'user_id' => $user->id,
+                'likeable_id' => $likeable_id,
+                'likeable_type' => $likeable_type,
+            ]);
+            $action = 'liked';
+
+            // Add points to the author
+            $model = $likeable_type::find($likeable_id);
+            if ($model && $model->user_id !== $user->id) {
+                $pointGamifikasi = \App\Models\PointGamifikasi::firstOrCreate(
+                    ['user_id' => $model->user_id]
+                );
+                $pointGamifikasi->increment('poin', 5);
+            }
+
+            LogAktivitas::create([
+                'user_id' => $user->id,
+                'jenis_aktivitas' => 'like_forum',
+                'item_id' => $likeable_id,
+            ]);
+
+            $likesCount = \App\Models\Like::where('likeable_id', $likeable_id)->where('likeable_type', $likeable_type)->count();
+            return response()->json(['success' => true, 'action' => $action, 'likes_count' => $likesCount]);
+        }
     }
 
     public function reply(Request $request, $id)

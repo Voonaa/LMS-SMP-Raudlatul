@@ -7,6 +7,12 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\MataPelajaran;
 use App\Models\Kelas;
 use App\Models\Materi;
+use App\Models\User;
+use App\Models\HasilKuis;
+use App\Models\LogAktivitas;
+use App\Models\ForumThread;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 use App\Services\GeminiService;
 
 class GuruDashboardController extends Controller
@@ -21,12 +27,61 @@ class GuruDashboardController extends Controller
     public function index()
     {
         $user = Auth::user();
-        // Sederhananya, tampilkan semua materi yang dibuat oleh guru ini
         $materiList = Materi::where('guru_id', $user->id)->with('mata_pelajaran', 'kelas')->get();
         $mapelList = MataPelajaran::all();
         $kelasList = Kelas::all();
 
-        return view('guru.dashboard', compact('user', 'materiList', 'mapelList', 'kelasList'));
+        // Statistik Ringkas
+        $totalSiswa = User::where('role', 'siswa')->count();
+        $rataRataKuis = HasilKuis::avg('nilai') ?? 0;
+        
+        $totalMateri = Materi::count();
+        $materiDibaca = LogAktivitas::where('jenis_aktivitas', 'baca_materi')->distinct('item_id')->count('item_id');
+        $persentasePenyelesaian = $totalMateri > 0 ? round(($materiDibaca / $totalMateri) * 100, 1) : 0;
+
+        // Student at Risk (5 Siswa nilai terendah atau aktivitas paling sedikit)
+        $studentsAtRisk = User::where('role', 'siswa')
+            ->withCount('log_aktivitas')
+            ->withAvg('hasil_kuis as avg_skor', 'nilai')
+            ->orderBy('avg_skor', 'asc')
+            ->orderBy('log_aktivitas_count', 'asc')
+            ->take(5)
+            ->get();
+
+        // Grafik Aktivitas (Tren 7 hari terakhir)
+        $aktivitas7Hari = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $date = Carbon::now()->subDays($i)->format('Y-m-d');
+            $count = LogAktivitas::whereDate('created_at', $date)->count();
+            $aktivitas7Hari[$date] = $count;
+        }
+
+        // Monitoring Forum (Top 5 Threads berdasarkan jumlah balasan)
+        $topForums = ForumThread::withCount('replies')
+            ->orderBy('replies_count', 'desc')
+            ->take(5)
+            ->get();
+
+        // Rekomendasi Terpopuler (Materi paling banyak dibaca)
+        $topMateri = LogAktivitas::where('jenis_aktivitas', 'baca_materi')
+            ->select('item_id', DB::raw('count(*) as total'))
+            ->groupBy('item_id')
+            ->orderBy('total', 'desc')
+            ->take(5)
+            ->get()
+            ->map(function ($log) {
+                $materi = Materi::find($log->item_id);
+                return [
+                    'judul' => $materi->judul ?? 'Materi Dihapus',
+                    'total' => $log->total
+                ];
+            });
+
+        return view('guru.dashboard', compact(
+            'user', 'materiList', 'mapelList', 'kelasList',
+            'totalSiswa', 'rataRataKuis', 'persentasePenyelesaian',
+            'studentsAtRisk', 'aktivitas7Hari', 'topForums', 'topMateri'
+        ));
     }
 
     public function generateMateri(Request $request)
