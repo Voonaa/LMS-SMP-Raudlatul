@@ -64,22 +64,26 @@ class SyntheticDataSeeder extends Seeder
                 $activityCount = rand(1, 5);   // Pasif
             }
 
+            // --- CONTEXT-AWARE SEEDING: Filter item berdasarkan kelas siswa ---
+            $materiKelas = Materi::where('kelas_id', $student->kelas_id)->pluck('id')->toArray();
+            $kuisKelas   = Kuis::where('kelas_id', $student->kelas_id)->pluck('id')->toArray();
+            $threadKelas = ForumThread::where('kelas_id', $student->kelas_id)->pluck('id')->toArray();
+
             for ($j = 0; $j < $activityCount; $j++) {
                 $actionType = $faker->randomElement(['baca_materi', 'kerjakan_kuis', 'like_forum']);
 
-                if ($actionType === 'baca_materi' && !empty($materiList)) {
+                if ($actionType === 'baca_materi' && !empty($materiKelas)) {
                     LogAktivitas::create([
                         'user_id' => $student->id,
                         'jenis_aktivitas' => 'baca_materi',
-                        'item_id' => $faker->randomElement($materiList),
+                        'item_id' => $faker->randomElement($materiKelas),
                         'durasi' => rand(100, 500),
                         'created_at' => $faker->dateTimeBetween('-1 month', 'now')
                     ]);
-                } elseif ($actionType === 'kerjakan_kuis' && !empty($kuisList)) {
-                    $kuisId = $faker->randomElement($kuisList);
+                } elseif ($actionType === 'kerjakan_kuis' && !empty($kuisKelas)) {
+                    $kuisId = $faker->randomElement($kuisKelas);
                     $skor = rand(60, 100);
                     
-                    // Simpan ke log
                     LogAktivitas::create([
                         'user_id' => $student->id,
                         'jenis_aktivitas' => 'kerjakan_kuis',
@@ -87,15 +91,14 @@ class SyntheticDataSeeder extends Seeder
                         'created_at' => $faker->dateTimeBetween('-1 month', 'now')
                     ]);
 
-                    // Simpan ke HasilKuis agar terhitung di Dashboard
                     HasilKuis::create([
                         'user_id' => $student->id,
                         'kuis_id' => $kuisId,
                         'nilai' => $skor,
                         'created_at' => $faker->dateTimeBetween('-1 month', 'now')
                     ]);
-                } elseif ($actionType === 'like_forum' && !empty($threadList)) {
-                    $threadId = $faker->randomElement($threadList);
+                } elseif ($actionType === 'like_forum' && !empty($threadKelas)) {
+                    $threadId = $faker->randomElement($threadKelas);
                     
                     Like::firstOrCreate([
                         'user_id' => $student->id,
