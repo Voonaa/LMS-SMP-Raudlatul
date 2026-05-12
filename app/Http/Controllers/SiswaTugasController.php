@@ -23,11 +23,19 @@ class SiswaTugasController extends Controller
 
     public function kumpulkan(Request $request, Tugas $tugas)
     {
+        $siswa = auth()->user();
+
+        // ─── CONTEXT-AWARE PRIVACY: Proteksi lintas kelas ───
+        if ((int) $tugas->kelas_id !== (int) $siswa->kelas_id) {
+            abort(403, 'Anda tidak memiliki akses ke tugas kelas ini.');
+        }
+        // ────────────────────────────────────────────────────
+
         $request->validate([
             'file_jawaban' => 'required|file|max:20480', // max 20MB
         ]);
 
-        $siswa = auth()->user();
+
 
         // Cegah pengumpulan ganda
         $existing = PengumpulanTugas::where('tugas_id', $tugas->id)

@@ -85,6 +85,12 @@ class ForumController extends Controller
         $user = Auth::user();
         $thread = ForumThread::findOrFail($id);
 
+        // ─── CONTEXT-AWARE PRIVACY: Proteksi lintas kelas ───
+        if ($user->role === 'siswa' && (int) $thread->kelas_id !== (int) $user->kelas_id) {
+            abort(403, 'Anda tidak memiliki akses ke topik forum ini.');
+        }
+        // ────────────────────────────────────────────────────
+
         ForumReply::create([
             'thread_id' => $thread->id,
             'user_id' => $user->id,

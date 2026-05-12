@@ -72,6 +72,7 @@ class CollaborativeFilteringService
         }
 
         if (empty($userItems) || empty($itemUserMatrix)) {
+            // GUARD: pastikan fallback juga hanya mengembalikan materi kelas sendiri
             return Materi::where('kelas_id', $kelasId)->inRandomOrder()->limit($limit)->get();
         }
 
@@ -114,6 +115,7 @@ class CollaborativeFilteringService
 
         if (empty($recommendedItemIds)) {
             $seenIds = array_keys($userItems);
+            // GUARD: fallback hanya materi kelas sendiri
             return Materi::where('kelas_id', $kelasId)
                 ->whereNotIn('id', $seenIds)
                 ->inRandomOrder()
@@ -121,8 +123,12 @@ class CollaborativeFilteringService
                 ->get();
         }
 
+        // GUARD UTAMA: Walau CF menghitung similarity dari semua item,
+        // hasil akhir WAJIB di-filter hanya untuk kelas pengguna.
+        // Ini mencegah materi kelas lain masuk ke rekomendasi.
         $placeholders = implode(',', array_fill(0, count($recommendedItemIds), '?'));
         return Materi::whereIn('id', $recommendedItemIds)
+            ->where('kelas_id', $kelasId)  // <-- CONTEXT-AWARE PRIVACY FILTER
             ->orderByRaw("FIELD(id, $placeholders)", $recommendedItemIds)
             ->get();
     }
