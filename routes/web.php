@@ -27,8 +27,8 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 Route::middleware('auth')->group(function () {
-    // Rute Siswa
-    Route::middleware('can:siswa')->group(function () {
+    // Rute Siswa — check.password memaksa ganti password sebelum mengakses apapun
+    Route::middleware(['can:siswa', 'check.password'])->group(function () {
         Route::get('/siswa/dashboard', [SiswaDashboardController::class, 'index'])->name('siswa.dashboard');
         
         // Materi
@@ -100,9 +100,10 @@ Route::middleware('auth')->group(function () {
     // Leaderboard (API)
     Route::get('/api/leaderboard/{kelasId}', [LeaderboardController::class, 'getLeaderboard']);
 
-    // Settings / Profile
+    // Settings / Profile (accessible even before password change)
     Route::get('/settings', [ProfileController::class, 'index'])->name('profile.settings');
     Route::post('/settings', [ProfileController::class, 'update'])->name('profile.update');
+    Route::post('/settings/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
 
     // Route Admin Testing & Management
     Route::middleware('can:admin')->group(function () {

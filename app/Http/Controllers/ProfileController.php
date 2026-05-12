@@ -14,26 +14,53 @@ class ProfileController extends Controller
         return view('profile.settings', compact('user'));
     }
 
+    /**
+     * Update profil umum (nama).
+     */
     public function update(Request $request)
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'current_password' => 'nullable|required_with:new_password',
-            'new_password' => 'nullable|min:6|confirmed',
         ]);
 
         $user = Auth::user();
         $user->name = $request->name;
-
-        if ($request->filled('new_password')) {
-            if (!Hash::check($request->current_password, $user->password)) {
-                return back()->withErrors(['current_password' => 'Password saat ini salah.']);
-            }
-            $user->password = Hash::make($request->new_password);
-        }
-
         $user->save();
 
         return back()->with('success', 'Profil berhasil diperbarui.');
+    }
+
+    /**
+     * Update password — jika berhasil, tandai is_password_changed = true.
+     * Ini adalah endpoint yang juga bisa diakses siswa yang belum ganti password.
+     */
+    public function updatePassword(Request $request)
+    {
+        $request->validate([
+            'current_password'          => 'required',
+            'new_password'              => 'required|min:6|confirmed',
+            'new_password_confirmation' => 'required',
+        ]);
+
+        $user = Auth::user();
+
+        // Verifikasi password lama
+        if (!Hash::check($request->current_password, $user->password)) {
+            return back()->withErrors(['current_password' => 'Password saat ini salah.'])->withInput();
+        }
+
+        // Simpan password baru & tandai sudah ganti password
+        $user->password           = Hash::make($request->new_password);
+        $user->is_password_changed = true;
+        $user->save();
+
+        // Redirect ke dashboard sesuai role setelah berhasil ganti password
+        $redirect = match ($user->role) {
+            'siswa' => route('siswa.dashboard'),
+            'guru'  => route('guru.dashboard'),
+            default => route('admin.dashboard'),
+        };
+
+        return redirect($redirect)->with('success', '✅ Password berhasil diperbarui. Selamat belajar!');
     }
 }
