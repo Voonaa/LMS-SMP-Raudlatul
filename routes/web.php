@@ -17,6 +17,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TestingController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\AdminConfigController;
+use App\Http\Controllers\SiswaDiagnostikController;
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -44,6 +45,10 @@ Route::middleware('auth')->group(function () {
         // Tugas (Pengumpulan)
         Route::get('/siswa/tugas', [SiswaTugasController::class, 'index'])->name('siswa.tugas.index');
         Route::post('/siswa/tugas/{tugas}/kumpulkan', [SiswaTugasController::class, 'kumpulkan'])->name('siswa.tugas.kumpulkan');
+
+        // Kuis Diagnostik (dapat diakses meski diagnostic_done=false, dikecualikan di middleware)
+        Route::get('/siswa/diagnostik', [SiswaDiagnostikController::class, 'show'])->name('siswa.diagnostik.show');
+        Route::post('/siswa/diagnostik/submit', [SiswaDiagnostikController::class, 'submit'])->name('siswa.diagnostik.submit');
     });
 
     // Rute Guru

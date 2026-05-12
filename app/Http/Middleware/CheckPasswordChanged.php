@@ -18,7 +18,8 @@ class CheckPasswordChanged
 
         if ($user && $user->role === 'siswa' && !$user->is_password_changed) {
             // Izinkan akses ke halaman ganti password & logout
-            $allowedRoutes = ['profile.settings', 'profile.update', 'profile.password', 'profile.password.update', 'logout'];
+            $allowedRoutes = ['profile.settings', 'profile.update', 'profile.password', 'profile.password.update',
+                              'siswa.diagnostik.show', 'siswa.diagnostik.submit', 'logout'];
 
             if (!in_array($request->route()?->getName(), $allowedRoutes)) {
                 return redirect()->route('profile.settings')

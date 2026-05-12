@@ -25,6 +25,7 @@ class User extends Authenticatable
         'role',
         'kelas_id',
         'is_password_changed',
+        'diagnostic_done',
     ];
 
     /**
@@ -48,6 +49,7 @@ class User extends Authenticatable
             'email_verified_at'    => 'datetime',
             'password'             => 'hashed',
             'is_password_changed'  => 'boolean',
+            'diagnostic_done'      => 'boolean',
         ];
     }
 
