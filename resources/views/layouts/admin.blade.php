@@ -134,7 +134,7 @@
             </a>
             <a class="flex items-center gap-3 px-4 py-3 {{ request()->routeIs('admin.testing.mae') ? 'text-primary bg-surface-container-low border-l-4 border-primary rounded-r-lg font-bold' : 'text-on-surface-variant hover:bg-surface-container rounded-lg' }} font-label-lg text-label-lg transition-colors" href="{{ route('admin.testing.mae') }}">
                 <span class="material-symbols-outlined">analytics</span>
-                Diagnosa MAE
+                Diagnosa Algoritma
             </a>
         </nav>
         
@@ -195,7 +195,7 @@
         </a>
         <a class="flex flex-col items-center justify-center {{ request()->routeIs('admin.testing.mae') ? 'text-primary' : 'text-on-surface-variant hover:text-primary' }} transition-colors py-1 w-16" href="{{ route('admin.testing.mae') }}">
             <span class="material-symbols-outlined mb-1" style="{{ request()->routeIs('admin.testing.mae') ? 'font-variation-settings:\'FILL\' 1;' : 'font-variation-settings:\'FILL\' 0;' }}">analytics</span>
-            <span class="font-label-sm text-[10px]">MAE</span>
+            <span class="font-label-sm text-[10px]">Algoritma</span>
         </a>
     </nav>
     

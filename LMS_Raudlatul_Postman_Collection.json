@@ -1,0 +1,192 @@
+{
+	"info": {
+		"_postman_id": "a1b2c3d4-e5f6-7890-1234-56789abcdef0",
+		"name": "LMS Raudlatul Hikmah - Pengujian Skripsi",
+		"description": "Koleksi Postman untuk pengujian Bab 4 Skripsi LMS SMP Islam Raudlatul Hikmah. Mencakup pengujian Otentikasi, AI Generative (Gemini), Kuis Diagnostik, dan Leaderboard (Gamifikasi).",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Pengujian Otentikasi",
+			"item": [
+				{
+					"name": "Login Siswa (Berhasil/Gagal)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "username",
+									"value": "siswa1",
+									"type": "text",
+									"description": "Ganti dengan username yang ada di database"
+								},
+								{
+									"key": "password",
+									"value": "password",
+									"type": "text",
+									"description": "Ganti dengan password yang benar untuk hasil 302, atau salahkan untuk hasil 422"
+								},
+								{
+									"key": "_token",
+									"value": "{{csrf_token}}",
+									"type": "text",
+									"description": "Kosongkan saja jika API web middleware memaklumi, atau isi manual dari inspect element halaman login."
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"login"
+							]
+						},
+						"description": "Pengujian Blackbox untuk memastikan validasi kredensial pengguna bekerja dengan baik."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "2. Pengujian Diagnostik & Gamifikasi",
+			"item": [
+				{
+					"name": "Submit Kuis Diagnostik (Siswa)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"jawaban\": {\r\n        \"1\": \"A\",\r\n        \"2\": \"B\",\r\n        \"3\": \"C\",\r\n        \"4\": \"D\",\r\n        \"5\": \"A\"\r\n    }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/siswa/diagnostik/submit",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"siswa",
+								"diagnostik",
+								"submit"
+							]
+						},
+						"description": "Pastikan Anda menggunakan cookie/session dari hasil login Siswa saat menjalankan endpoint ini."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Leaderboard Kelas (Context-Aware)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/leaderboard/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"leaderboard",
+								"1"
+							],
+							"description": "Ganti '1' dengan ID kelas yang sesuai. Jika login sebagai siswa dan mengakses ID kelas lain, harus menghasilkan 403 Forbidden."
+						},
+						"description": "Pengujian API untuk memastikan kalkulasi poin gamifikasi berjalan secara realtime."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "3. Pengujian Generative AI (Gemini)",
+			"item": [
+				{
+					"name": "Generate Materi via AI (Guru)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"prompt\": \"Jelaskan hukum Newton 1, 2, dan 3 dengan bahasa yang sangat sederhana untuk anak SMP, berikan contoh dalam kehidupan sehari-hari.\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/guru/materi/generate",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"guru",
+								"materi",
+								"generate"
+							]
+						},
+						"description": "Pastikan Anda menggunakan cookie/session dari hasil login Guru saat menjalankan endpoint ini. Akan menghasilkan response berformat HTML dari Gemini."
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://127.0.0.1:8000",
+			"type": "string"
+		},
+		{
+			"key": "csrf_token",
+			"value": "",
+			"type": "string",
+			"description": "Token CSRF (Opsional jika dibutuhkan)"
+		}
+	]
+}

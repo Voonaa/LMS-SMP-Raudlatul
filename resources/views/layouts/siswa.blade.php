@@ -152,6 +152,10 @@
                 <span class="material-symbols-outlined">forum</span>
                 Forum
             </a>
+            <a class="flex items-center gap-3 px-4 py-3 {{ request()->routeIs('siswa.achievements') ? 'text-primary bg-surface-container-low border-l-4 border-primary rounded-r-lg font-bold' : 'text-on-surface-variant hover:bg-surface-container rounded-lg' }} font-label-lg text-label-lg transition-colors" href="{{ route('siswa.achievements') }}">
+                <span class="material-symbols-outlined">workspace_premium</span>
+                Pusat Pencapaian
+            </a>
         </nav>
         
         <div class="p-4 border-t border-surface-container">
@@ -214,9 +218,13 @@
             <span class="material-symbols-outlined mb-1" style="{{ request()->routeIs('siswa.tugas.*') ? 'font-variation-settings:\'FILL\' 1;' : 'font-variation-settings:\'FILL\' 0;' }}">task</span>
             <span class="font-label-sm text-[10px]">Tugas</span>
         </a>
-        <a class="flex flex-col items-center justify-center {{ request()->routeIs('forum.*') ? 'text-primary' : 'text-on-surface-variant hover:text-primary' }} transition-colors py-1 w-16" href="{{ route('forum.index') }}">
+        <a class="flex flex-col items-center justify-center {{ request()->routeIs('forum.*') ? 'text-primary' : 'text-on-surface-variant hover:text-primary' }} transition-colors py-1 w-14" href="{{ route('forum.index') }}">
             <span class="material-symbols-outlined mb-1" style="{{ request()->routeIs('forum.*') ? 'font-variation-settings:\'FILL\' 1;' : 'font-variation-settings:\'FILL\' 0;' }}">groups</span>
-            <span class="font-label-sm text-[10px]">Forum</span>
+            <span class="font-label-sm text-[9px]">Forum</span>
+        </a>
+        <a class="flex flex-col items-center justify-center {{ request()->routeIs('siswa.achievements') ? 'text-primary' : 'text-on-surface-variant hover:text-primary' }} transition-colors py-1 w-14" href="{{ route('siswa.achievements') }}">
+            <span class="material-symbols-outlined mb-1" style="{{ request()->routeIs('siswa.achievements') ? 'font-variation-settings:\'FILL\' 1;' : 'font-variation-settings:\'FILL\' 0;' }}">workspace_premium</span>
+            <span class="font-label-sm text-[9px]">Badge</span>
         </a>
     </nav>
     

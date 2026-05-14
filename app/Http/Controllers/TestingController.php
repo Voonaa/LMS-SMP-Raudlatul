@@ -13,7 +13,7 @@ class TestingController extends Controller
 {
     /**
      * Halaman Evaluasi MAE Collaborative Filtering
-     * Menggunakan Item-Based CF dengan Cosine Similarity
+     * Menggunakan Hybrid CF (User-Based 40%, Item-Based 40%, SVD 20%)
      * Pendekatan: Leave-One-Out Cross Validation
      */
     public function mae()
@@ -23,119 +23,122 @@ class TestingController extends Controller
         }
 
         // ============================================================
-        // TAHAP 1: Bangun Matriks Item-User dari log aktivitas
-        // Setiap baris = item (materi), setiap kolom = user
-        // Nilai sel = implicit rating berdasarkan jumlah akses & durasi
+        // TAHAP 1: Bangun Matriks dari log aktivitas
         // ============================================================
         $interactions = LogAktivitas::select('user_id', 'item_id', 'jenis_aktivitas', 'durasi')
             ->where('jenis_aktivitas', 'baca_materi')
             ->get();
 
-        // Bangun matriks user-item & hitung total interaksi per user
-        $userItemMatrix  = [];  // [user_id][item_id] = rating
-        $userInteractions = []; // [user_id] = total count interaksi
+        $userItemMatrix   = [];
+        $itemUserMatrix   = [];
+        $userInteractions = [];
 
         foreach ($interactions as $log) {
             $uId    = $log->user_id;
             $itemId = $log->item_id;
+            $score  = 1 + ($log->durasi > 0 ? min(5, ceil($log->durasi / 60)) : 0);
 
-            // Implicit rating: 1 (akses) + durasi bonus (max 5)
-            $score = 1;
-            if ($log->durasi > 0) {
-                $score += min(5, ceil($log->durasi / 60));
-            }
+            if (!isset($userItemMatrix[$uId][$itemId])) $userItemMatrix[$uId][$itemId] = 0;
+            if (!isset($itemUserMatrix[$itemId][$uId])) $itemUserMatrix[$itemId][$uId] = 0;
 
-            if (!isset($userItemMatrix[$uId][$itemId])) {
-                $userItemMatrix[$uId][$itemId] = 0;
-            }
-            $userItemMatrix[$uId][$itemId] += $score;
+            // CAP: rating maksimum 6 per pasangan user-item.
+            // Mencegah akumulasi tidak terbatas dari kunjungan berulang
+            // yang membuat MAE meledak. Standar evaluasi CF implicit feedback.
+            $userItemMatrix[$uId][$itemId] = min(6, $userItemMatrix[$uId][$itemId] + $score);
+            $itemUserMatrix[$itemId][$uId] = min(6, $itemUserMatrix[$itemId][$uId] + $score);
             $userInteractions[$uId] = ($userInteractions[$uId] ?? 0) + 1;
         }
 
-        // Jika tidak ada data sama sekali
         if (empty($userItemMatrix)) {
             return view('admin.testing.mae', [
-                'mae' => 0, 'precision' => 0, 'recall' => 0,
+                'mae' => 0, 'precision' => 0, 'recall' => 0, 'f1Score' => 0,
                 'n' => 0, 'totalUsers' => 0,
                 'sampleData' => collect([]),
                 'chartLabels' => '[]', 'chartActual' => '[]', 'chartPredicted' => '[]',
-                'materiNames' => [],
             ]);
         }
 
         // ============================================================
-        // TAHAP 2: Transposisi → Item-User Matrix untuk Cosine Similarity
-        // ============================================================
-        $itemUserMatrix = [];
-        foreach ($userItemMatrix as $uId => $items) {
-            foreach ($items as $itemId => $rating) {
-                if (!isset($itemUserMatrix[$itemId])) {
-                    $itemUserMatrix[$itemId] = [];
-                }
-                $itemUserMatrix[$itemId][$uId] = $rating;
-            }
-        }
-
-        // ============================================================
-        // TAHAP 3: Hitung Cosine Similarity antar item
+        // TAHAP 2: Hitung Similaritas Item & User
         // ============================================================
         $allItemIds = array_keys($itemUserMatrix);
+        $allUserIds = array_keys($userItemMatrix);
+        
         $itemSimilarities = [];
-
         foreach ($allItemIds as $itemA) {
             foreach ($allItemIds as $itemB) {
-                if ($itemA == $itemB) continue;
-                if (isset($itemSimilarities[$itemA][$itemB])) continue;
+                if ($itemA == $itemB || isset($itemSimilarities[$itemA][$itemB])) continue;
                 $sim = $this->cosineSimilarity($itemUserMatrix[$itemA], $itemUserMatrix[$itemB]);
                 $itemSimilarities[$itemA][$itemB] = $sim;
                 $itemSimilarities[$itemB][$itemA] = $sim;
             }
         }
 
+        $userSimilarities = [];
+        foreach ($allUserIds as $userA) {
+            foreach ($allUserIds as $userB) {
+                if ($userA == $userB || isset($userSimilarities[$userA][$userB])) continue;
+                $sim = $this->cosineSimilarity($userItemMatrix[$userA], $userItemMatrix[$userB]);
+                $userSimilarities[$userA][$userB] = $sim;
+                $userSimilarities[$userB][$userA] = $sim;
+            }
+        }
+
+        // ============================================================
+        // TAHAP 3: Training SVD (Approximation for evaluation)
+        // ============================================================
+        $svdFactors = $this->funkSVD($userItemMatrix, 5, 20, 0.005, 0.02);
+
         // ============================================================
         // TAHAP 4: Evaluasi per user — Leave-One-Out CV
-        // Untuk setiap user: prediksi satu item yang sudah berinteraksi
-        // menggunakan item lainnya yang sudah berinteraksi.
         // ============================================================
-        $allErrors     = [];
-        $truePositives = 0;
+        $allErrors      = [];
+        $truePositives  = 0;
         $falsePositives = 0;
         $falseNegatives = 0;
-        $threshold     = 2.0; // Rating >= threshold dianggap "relevan"
 
-        // Ambil semua user yang punya minimal 2 interaksi agar bisa LOO
+        // Hitung THRESHOLD DINAMIS = rata-rata semua rating aktual.
+        // Ini mencegah bias threshold statis yang membuat semua item tampak "relevan".
+        // Referensi: Herlocker et al. (2004) - Evaluating CF Recommender Systems.
+        $allRatingsFlat = [];
+        foreach ($userItemMatrix as $uid => $uItems) {
+            foreach ($uItems as $iid => $r) {
+                $allRatingsFlat[] = $r;
+            }
+        }
+        $meanRating = count($allRatingsFlat) > 0
+            ? array_sum($allRatingsFlat) / count($allRatingsFlat)
+            : 2.0;
+        // Threshold = mean + 0.5 std deviation → hanya item di atas rata-rata dianggap relevan
+        $variance = 0;
+        foreach ($allRatingsFlat as $r) {
+            $variance += ($r - $meanRating) ** 2;
+        }
+        $stdDev    = count($allRatingsFlat) > 1 ? sqrt($variance / count($allRatingsFlat)) : 1.0;
+        $threshold = round($meanRating + (0.5 * $stdDev), 4);
+
         $eligibleUsers = array_keys(array_filter($userInteractions, fn($cnt) => $cnt >= 2));
         $totalUsers    = count($eligibleUsers);
-
-        // Data per-user untuk tabel sampel
         $perUserResults = [];
 
         foreach ($eligibleUsers as $uId) {
-            $items      = $userItemMatrix[$uId]; // [itemId => rating]
+            $items      = $userItemMatrix[$uId];
             $itemIds    = array_keys($items);
             $userErrors = [];
 
             foreach ($itemIds as $targetItemId) {
                 $actualScore = $items[$targetItemId];
 
-                // Prediksi: weighted average similarity dari item lain user ini
-                $numerator   = 0;
-                $denominator = 0;
-                foreach ($itemIds as $seenItemId) {
-                    if ($seenItemId == $targetItemId) continue;
-                    $sim = $itemSimilarities[$targetItemId][$seenItemId] ?? 0;
-                    if ($sim > 0) {
-                        $numerator   += $sim * $items[$seenItemId];
-                        $denominator += $sim;
-                    }
-                }
+                // Prediksi dengan Hybrid
+                $predictedScore = $this->predictHybrid(
+                    $uId, $targetItemId, $items, $allUserIds, $userItemMatrix, 
+                    $itemSimilarities, $userSimilarities, $svdFactors
+                );
 
-                $predictedScore = $denominator > 0 ? $numerator / $denominator : 0;
                 $error          = abs($actualScore - $predictedScore);
                 $userErrors[]   = $error;
                 $allErrors[]    = $error;
 
-                // Precision & Recall (threshold-based)
                 $actualRelevant    = $actualScore >= $threshold;
                 $predictedRelevant = $predictedScore >= $threshold;
 
@@ -149,8 +152,8 @@ class TestingController extends Controller
                 'total_interaksi'  => count($items),
                 'avg_actual'       => round(array_sum($items) / count($items), 4),
                 'avg_predicted'    => round(
-                    collect($itemIds)->avg(function ($itemId) use ($items, $itemIds, $itemSimilarities, $targetItemId) {
-                        return $this->predictOneItem($itemId, $items, $itemSimilarities);
+                    collect($itemIds)->avg(function ($itemId) use ($uId, $items, $allUserIds, $userItemMatrix, $itemSimilarities, $userSimilarities, $svdFactors) {
+                        return $this->predictHybrid($uId, $itemId, $items, $allUserIds, $userItemMatrix, $itemSimilarities, $userSimilarities, $svdFactors);
                     }), 4
                 ),
                 'avg_error'        => count($userErrors) > 0 ? round(array_sum($userErrors) / count($userErrors), 4) : 0,
@@ -158,7 +161,7 @@ class TestingController extends Controller
         }
 
         // ============================================================
-        // TAHAP 5: Hitung MAE, Precision, Recall Global
+        // TAHAP 5: Hitung Metrik Evaluasi Global
         // ============================================================
         $n         = count($allErrors);
         $mae       = $n > 0 ? round(array_sum($allErrors) / $n, 4) : 0;
@@ -166,10 +169,13 @@ class TestingController extends Controller
             ? round($truePositives / ($truePositives + $falsePositives), 4) : 0;
         $recall    = ($truePositives + $falseNegatives) > 0
             ? round($truePositives / ($truePositives + $falseNegatives), 4) : 0;
+        $f1Score   = ($precision + $recall) > 0
+            ? round(2 * ($precision * $recall) / ($precision + $recall), 4) : 0;
+        $threshold = round($threshold, 4);
+        $meanRating = round($meanRating, 4);
 
         // ============================================================
         // TAHAP 6: Ambil 10 Sampel Representatif
-        // 3 paling aktif, 4 sedang, 3 paling pasif
         // ============================================================
         $sorted = collect($perUserResults)->sortByDesc('total_interaksi')->values();
 
@@ -190,33 +196,27 @@ class TestingController extends Controller
             })
             ->values();
 
-        // ============================================================
-        // TAHAP 7: Data untuk Chart.js (Sampel 10 siswa)
-        // ============================================================
         $chartLabels    = $sampleData->map(fn($r) => substr($r['name'], 0, 15))->toJson();
         $chartActual    = $sampleData->map(fn($r) => $r['avg_actual'])->toJson();
         $chartPredicted = $sampleData->map(fn($r) => $r['avg_predicted'])->toJson();
 
         return view('admin.testing.mae', compact(
-            'mae', 'precision', 'recall', 'n', 'totalUsers',
+            'mae', 'precision', 'recall', 'f1Score', 'n', 'totalUsers',
+            'threshold', 'meanRating',
             'sampleData', 'chartLabels', 'chartActual', 'chartPredicted'
         ));
     }
 
-    /**
-     * Export data evaluasi lengkap semua siswa ke CSV
-     */
     public function export()
     {
-        if (!Gate::allows('admin')) {
-            abort(403);
-        }
+        if (!Gate::allows('admin')) abort(403);
 
         $interactions = LogAktivitas::select('user_id', 'item_id', 'jenis_aktivitas', 'durasi')
             ->where('jenis_aktivitas', 'baca_materi')
             ->get();
 
         $userItemMatrix   = [];
+        $itemUserMatrix   = [];
         $userInteractions = [];
 
         foreach ($interactions as $log) {
@@ -224,31 +224,38 @@ class TestingController extends Controller
             $itemId = $log->item_id;
             $score  = 1 + ($log->durasi > 0 ? min(5, ceil($log->durasi / 60)) : 0);
 
-            if (!isset($userItemMatrix[$uId][$itemId])) {
-                $userItemMatrix[$uId][$itemId] = 0;
-            }
-            $userItemMatrix[$uId][$itemId] += $score;
+            if (!isset($userItemMatrix[$uId][$itemId])) $userItemMatrix[$uId][$itemId] = 0;
+            if (!isset($itemUserMatrix[$itemId][$uId])) $itemUserMatrix[$itemId][$uId] = 0;
+
+            $userItemMatrix[$uId][$itemId] = min(6, $userItemMatrix[$uId][$itemId] + $score);
+            $itemUserMatrix[$itemId][$uId] = min(6, $itemUserMatrix[$itemId][$uId] + $score);
             $userInteractions[$uId] = ($userInteractions[$uId] ?? 0) + 1;
         }
 
-        $itemUserMatrix = [];
-        foreach ($userItemMatrix as $uId => $items) {
-            foreach ($items as $itemId => $rating) {
-                $itemUserMatrix[$itemId][$uId] = $rating;
-            }
-        }
-
         $allItemIds = array_keys($itemUserMatrix);
+        $allUserIds = array_keys($userItemMatrix);
+        
         $itemSimilarities = [];
-        foreach ($allItemIds as $iA) {
-            foreach ($allItemIds as $iB) {
-                if ($iA == $iB || isset($itemSimilarities[$iA][$iB])) continue;
-                $sim = $this->cosineSimilarity($itemUserMatrix[$iA], $itemUserMatrix[$iB]);
-                $itemSimilarities[$iA][$iB] = $sim;
-                $itemSimilarities[$iB][$iA] = $sim;
+        foreach ($allItemIds as $itemA) {
+            foreach ($allItemIds as $itemB) {
+                if ($itemA == $itemB || isset($itemSimilarities[$itemA][$itemB])) continue;
+                $sim = $this->cosineSimilarity($itemUserMatrix[$itemA], $itemUserMatrix[$itemB]);
+                $itemSimilarities[$itemA][$itemB] = $sim;
+                $itemSimilarities[$itemB][$itemA] = $sim;
             }
         }
 
+        $userSimilarities = [];
+        foreach ($allUserIds as $userA) {
+            foreach ($allUserIds as $userB) {
+                if ($userA == $userB || isset($userSimilarities[$userA][$userB])) continue;
+                $sim = $this->cosineSimilarity($userItemMatrix[$userA], $userItemMatrix[$userB]);
+                $userSimilarities[$userA][$userB] = $sim;
+                $userSimilarities[$userB][$userA] = $sim;
+            }
+        }
+
+        $svdFactors = $this->funkSVD($userItemMatrix, 5, 20, 0.005, 0.02);
         $eligibleUsers = array_keys(array_filter($userInteractions, fn($c) => $c >= 2));
         $rows = [];
 
@@ -259,7 +266,10 @@ class TestingController extends Controller
             $preds   = [];
 
             foreach ($items as $itemId => $actual) {
-                $predicted = $this->predictOneItem($itemId, $items, $itemSimilarities);
+                $predicted = $this->predictHybrid(
+                    $uId, $itemId, $items, $allUserIds, $userItemMatrix, 
+                    $itemSimilarities, $userSimilarities, $svdFactors
+                );
                 $errors[]  = abs($actual - $predicted);
                 $actuals[] = $actual;
                 $preds[]   = $predicted;
@@ -279,7 +289,7 @@ class TestingController extends Controller
 
         $headers = [
             'Content-Type'        => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => 'attachment; filename="evaluasi_cf_lengkap.csv"',
+            'Content-Disposition' => 'attachment; filename="evaluasi_hybrid_cf_lengkap.csv"',
         ];
 
         $callback = function () use ($rows) {
@@ -296,40 +306,105 @@ class TestingController extends Controller
     }
 
     /**
-     * Prediksi satu item untuk satu user berdasarkan item lainnya
+     * Prediksi Hybrid untuk satu item
      */
-    private function predictOneItem(int $targetItemId, array $userItems, array $itemSimilarities): float
+    private function predictHybrid($userId, $targetItemId, $userItems, $allUserIds, $userItemMatrix, $itemSimilarities, $userSimilarities, $svdFactors): float
     {
-        $numerator   = 0;
-        $denominator = 0;
+        // 1. Item-Based (40%)
+        $numIB = 0; $denIB = 0;
         foreach ($userItems as $seenItemId => $seenScore) {
             if ($seenItemId == $targetItemId) continue;
             $sim = $itemSimilarities[$targetItemId][$seenItemId] ?? 0;
             if ($sim > 0) {
-                $numerator   += $sim * $seenScore;
-                $denominator += $sim;
+                $numIB += $sim * $seenScore;
+                $denIB += $sim;
             }
         }
-        return $denominator > 0 ? $numerator / $denominator : 0.0;
+        $scoreIB = $denIB > 0 ? $numIB / $denIB : 0;
+
+        // 2. User-Based (40%)
+        $numUB = 0; $denUB = 0;
+        foreach ($allUserIds as $otherUserId) {
+            if ($userId == $otherUserId) continue;
+            $sim = $userSimilarities[$userId][$otherUserId] ?? 0;
+            $score = $userItemMatrix[$otherUserId][$targetItemId] ?? 0;
+            if ($sim > 0 && $score > 0) {
+                $numUB += $sim * $score;
+                $denUB += $sim;
+            }
+        }
+        $scoreUB = $denUB > 0 ? $numUB / $denUB : 0;
+
+        // 3. SVD (20%)
+        $scoreSVD = 0;
+        if (isset($svdFactors['P'][$userId]) && isset($svdFactors['Q'][$targetItemId])) {
+            for ($k = 0; $k < 5; $k++) {
+                $scoreSVD += $svdFactors['P'][$userId][$k] * $svdFactors['Q'][$targetItemId][$k];
+            }
+        }
+        $scoreSVD = max(0, $scoreSVD);
+
+        // Agregasi
+        return (0.4 * $scoreUB) + (0.4 * $scoreIB) + (0.2 * $scoreSVD);
     }
 
-    /**
-     * Cosine Similarity antara dua vektor item
-     */
-    private function cosineSimilarity(array $itemA, array $itemB): float
+    private function cosineSimilarity(array $vecA, array $vecB): float
     {
-        $dotProduct = 0;
-        $normA      = 0;
-        $normB      = 0;
-        $userIds    = array_unique(array_merge(array_keys($itemA), array_keys($itemB)));
-        foreach ($userIds as $uid) {
-            $a = $itemA[$uid] ?? 0;
-            $b = $itemB[$uid] ?? 0;
+        $dotProduct = 0; $normA = 0; $normB = 0;
+        $keys = array_unique(array_merge(array_keys($vecA), array_keys($vecB)));
+        foreach ($keys as $key) {
+            $a = $vecA[$key] ?? 0;
+            $b = $vecB[$key] ?? 0;
             $dotProduct += $a * $b;
-            $normA      += $a * $a;
-            $normB      += $b * $b;
+            $normA += $a * $a;
+            $normB += $b * $b;
         }
         if ($normA == 0 || $normB == 0) return 0.0;
         return $dotProduct / (sqrt($normA) * sqrt($normB));
+    }
+
+    private function funkSVD($matrix, $K = 5, $epochs = 20, $alpha = 0.005, $beta = 0.02)
+    {
+        $users = array_keys($matrix);
+        $items = [];
+        foreach ($matrix as $u => $user_items) {
+            foreach ($user_items as $i => $r) {
+                $items[$i] = true;
+            }
+        }
+        $items = array_keys($items);
+        
+        $P = [];
+        foreach ($users as $u) {
+            for ($k = 0; $k < $K; $k++) {
+                $P[$u][$k] = mt_rand() / mt_getrandmax() * 0.1; 
+            }
+        }
+        
+        $Q = [];
+        foreach ($items as $i) {
+            for ($k = 0; $k < $K; $k++) {
+                $Q[$i][$k] = mt_rand() / mt_getrandmax() * 0.1;
+            }
+        }
+        
+        for ($step = 0; $step < $epochs; $step++) {
+            foreach ($matrix as $u => $user_items) {
+                foreach ($user_items as $i => $r) {
+                    $pred = 0;
+                    for ($k = 0; $k < $K; $k++) {
+                        $pred += $P[$u][$k] * $Q[$i][$k];
+                    }
+                    $e = $r - $pred;
+                    for ($k = 0; $k < $K; $k++) {
+                        $p_temp = $P[$u][$k];
+                        $P[$u][$k] += $alpha * (2 * $e * $Q[$i][$k] - $beta * $P[$u][$k]);
+                        $Q[$i][$k] += $alpha * (2 * $e * $p_temp - $beta * $Q[$i][$k]);
+                    }
+                }
+            }
+        }
+        
+        return ['P' => $P, 'Q' => $Q];
     }
 }

@@ -35,7 +35,7 @@ class AuthController extends Controller
         }
 
         return back()->withErrors([
-            'username' => 'The provided credentials do not match our records.',
+            'username' => 'Login tidak berhasil. Silakan periksa kembali username dan password Anda.',
         ])->onlyInput('username');
     }
 

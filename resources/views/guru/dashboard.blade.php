@@ -76,22 +76,14 @@
         </div>
     </div>
 
-    <!-- 3. Grafik Aktivitas Sederhana -->
+    <!-- 3. Grafik Aktivitas -->
     <div class="bg-surface-container-lowest rounded-2xl p-6 shadow-[0_4px_20px_0_rgba(0,105,72,0.05)] border border-surface-container flex flex-col">
         <h3 class="font-headline-md text-lg font-bold text-on-surface mb-6 flex items-center gap-2">
             <span class="material-symbols-outlined text-primary">insights</span> Aktivitas 7 Hari Terakhir
         </h3>
         
-        <div class="flex-1 flex items-end justify-between gap-2 h-48 mt-auto">
-            @php $maxAct = !empty($aktivitas7Hari) ? max($aktivitas7Hari) : 1; $maxAct = $maxAct == 0 ? 1 : $maxAct; @endphp
-            @foreach($aktivitas7Hari ?? [] as $date => $count)
-                <div class="flex flex-col items-center gap-2 flex-1 group">
-                    <div class="w-full bg-primary-container rounded-t-sm relative group-hover:bg-primary transition-colors" style="height: {{ ($count / $maxAct) * 100 }}%; min-height: 4px;">
-                        <span class="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-bold text-primary opacity-0 group-hover:opacity-100 transition-opacity">{{ $count }}</span>
-                    </div>
-                    <span class="text-[10px] text-on-surface-variant truncate w-full text-center">{{ \Carbon\Carbon::parse($date)->format('d M') }}</span>
-                </div>
-            @endforeach
+        <div class="flex-1 h-48">
+            <canvas id="aktivitasChart"></canvas>
         </div>
     </div>
 </div>
@@ -147,4 +139,75 @@
         </div>
     </div>
 </div>
+@endsection
+
+@section('scripts')
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const ctx = document.getElementById('aktivitasChart').getContext('2d');
+        const labels = {!! json_encode(array_map(function($date) { return \Carbon\Carbon::parse($date)->format('d M'); }, array_keys($aktivitas7Hari))) !!};
+        const data = {!! json_encode(array_values($aktivitas7Hari)) !!};
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Jumlah Aktivitas',
+                    data: data,
+                    borderColor: '#006948', // Primary color
+                    backgroundColor: 'rgba(0, 105, 72, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#006948',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                    pointHoverRadius: 7
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        backgroundColor: '#fff',
+                        titleColor: '#1c1b1f',
+                        bodyColor: '#1c1b1f',
+                        borderColor: '#e0e0e0',
+                        borderWidth: 1,
+                        displayColors: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1,
+                            color: '#49454f'
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            color: '#49454f'
+                        },
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
 @endsection

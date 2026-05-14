@@ -148,6 +148,7 @@
                                    class="p-1.5 text-on-surface-variant hover:text-tertiary hover:bg-tertiary/10 rounded-md transition-colors" title="Edit">
                                     <span class="material-symbols-outlined text-sm">edit</span>
                                 </a>
+                                @if($user->role !== 'admin')
                                 <form action="{{ route('admin.user.destroy', $user->id) }}" method="POST"
                                       onsubmit="return confirm('Yakin hapus user {{ addslashes($user->name) }}?')">
                                     @csrf @method('DELETE')
@@ -156,6 +157,7 @@
                                         <span class="material-symbols-outlined text-sm">delete</span>
                                     </button>
                                 </form>
+                                @endif
                             </div>
                         </td>
                     </tr>

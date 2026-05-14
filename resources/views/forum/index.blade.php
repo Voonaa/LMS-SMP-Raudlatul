@@ -115,6 +115,17 @@
             <form action="{{ route('forum.store') }}" method="POST">
                 @csrf
                 <div class="space-y-4">
+                    @if(auth()->user()->role === 'guru')
+                    <div>
+                        <label class="block text-sm font-semibold text-on-surface mb-1">Kelas</label>
+                        <select name="kelas_id" required class="w-full border border-outline-variant bg-surface rounded-lg p-2 focus:ring-primary focus:border-primary">
+                            <option value="">Pilih Kelas</option>
+                            @foreach($kelasList ?? [] as $kelas)
+                                <option value="{{ $kelas->id }}">{{ $kelas->nama_kelas }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    @endif
                     <div>
                         <label class="block text-sm font-semibold text-on-surface mb-1">Mata Pelajaran</label>
                         <select name="mata_pelajaran_id" required class="w-full border border-outline-variant bg-surface rounded-lg p-2 focus:ring-primary focus:border-primary">

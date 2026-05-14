@@ -24,7 +24,8 @@ class ForumController extends Controller
 
         $threads = $query->latest()->get();
         $mapelList = MataPelajaran::all();
-        return view('forum.index', compact('threads', 'user', 'mapelList'));
+        $kelasList = Kelas::all();
+        return view('forum.index', compact('threads', 'user', 'mapelList', 'kelasList'));
     }
 
     public function toggleLike(Request $request)
@@ -108,17 +109,23 @@ class ForumController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $rules = [
             'judul' => 'required|string|max:255',
             'konten' => 'required|string',
             'mata_pelajaran_id' => 'required|exists:mata_pelajaran,id',
-        ]);
+        ];
+
+        if (Auth::user()->role === 'guru') {
+            $rules['kelas_id'] = 'required|exists:kelas,id';
+        }
+
+        $request->validate($rules);
 
         $user = Auth::user();
         
         ForumThread::create([
             'user_id' => $user->id,
-            'kelas_id' => $user->kelas_id,
+            'kelas_id' => $user->role === 'guru' ? $request->kelas_id : $user->kelas_id,
             'mata_pelajaran_id' => $request->mata_pelajaran_id,
             'judul' => $request->judul,
             'konten' => $request->konten,

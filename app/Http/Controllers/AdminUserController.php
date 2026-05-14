@@ -102,7 +102,13 @@ class AdminUserController extends Controller
 
     public function destroy($id)
     {
-        User::findOrFail($id)->delete();
+        $user = User::findOrFail($id);
+        
+        if ($user->role === 'admin') {
+            return redirect()->route('admin.user.index')->with('error', 'Akun Administrator tidak dapat dihapus demi keamanan sistem.');
+        }
+
+        $user->delete();
         return redirect()->route('admin.user.index')->with('success', 'User berhasil dihapus.');
     }
 

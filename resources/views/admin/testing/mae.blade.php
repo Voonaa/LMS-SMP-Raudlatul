@@ -1,5 +1,5 @@
 @extends('layouts.admin')
-@section('title', 'Evaluasi CF (MAE) - Admin LMS')
+@section('title', 'Evaluasi Algoritma - Admin LMS')
 @section('page_title', 'Evaluasi Collaborative Filtering')
 
 @section('content')
@@ -12,7 +12,7 @@
         <div>
             <h2 class="text-2xl font-bold text-on-surface">Evaluasi Algoritma Collaborative Filtering</h2>
             <p class="text-on-surface-variant mt-1">
-                Metode: <span class="font-semibold text-primary">Item-Based CF · Cosine Similarity</span> ·
+                Metode: <span class="font-semibold text-primary">Hybrid CF (User-Based, Item-Based, SVD)</span> ·
                 Validasi: <span class="font-semibold text-primary">Leave-One-Out Cross Validation (LOO-CV)</span>
             </p>
         </div>
@@ -26,13 +26,13 @@
 {{-- ============================================================
      CARDS RINGKASAN SKOR
 ============================================================ --}}
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 mb-8">
 
     {{-- MAE --}}
     <div class="lg:col-span-1 bg-gradient-to-br from-primary to-primary/80 rounded-2xl p-5 text-on-primary shadow-[0_4px_20px_0_rgba(0,105,72,0.25)] flex flex-col items-center text-center">
         <span class="material-symbols-outlined text-3xl mb-1 opacity-80">analytics</span>
         <p class="text-3xl font-black">{{ number_format($mae, 4) }}</p>
-        <p class="text-xs font-semibold uppercase tracking-wider mt-1 opacity-80">MAE (Mean Absolute Error)</p>
+        <p class="text-xs font-semibold uppercase tracking-wider mt-1 opacity-80">Mean Absolute Error (MAE)</p>
         <p class="text-[10px] opacity-60 mt-1">Semakin kecil = semakin akurat</p>
     </div>
 
@@ -40,7 +40,7 @@
     <div class="lg:col-span-1 bg-surface-container-lowest rounded-2xl p-5 border border-surface-container shadow-sm flex flex-col items-center text-center">
         <span class="material-symbols-outlined text-3xl text-tertiary mb-1">verified</span>
         <p class="text-3xl font-black text-on-surface">{{ number_format($precision * 100, 1) }}<span class="text-lg">%</span></p>
-        <p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mt-1">Precision</p>
+        <p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mt-1">Precision@10</p>
         <p class="text-[10px] text-outline mt-1">TP / (TP + FP)</p>
     </div>
 
@@ -48,8 +48,16 @@
     <div class="lg:col-span-1 bg-surface-container-lowest rounded-2xl p-5 border border-surface-container shadow-sm flex flex-col items-center text-center">
         <span class="material-symbols-outlined text-3xl text-[#d4af37] mb-1">target</span>
         <p class="text-3xl font-black text-on-surface">{{ number_format($recall * 100, 1) }}<span class="text-lg">%</span></p>
-        <p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mt-1">Recall</p>
+        <p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mt-1">Recall@10</p>
         <p class="text-[10px] text-outline mt-1">TP / (TP + FN)</p>
+    </div>
+
+    {{-- F1-Score --}}
+    <div class="lg:col-span-1 bg-surface-container-lowest rounded-2xl p-5 border border-surface-container shadow-sm flex flex-col items-center text-center">
+        <span class="material-symbols-outlined text-3xl text-blue-500 mb-1">balance</span>
+        <p class="text-3xl font-black text-on-surface">{{ number_format($f1Score * 100, 1) }}<span class="text-lg">%</span></p>
+        <p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mt-1">F1-Score@10</p>
+        <p class="text-[10px] text-outline mt-1">Harmonic Mean P & R</p>
     </div>
 
     {{-- Total Data --}}
@@ -220,16 +228,16 @@
 {{-- ============================================================
      KETERANGAN METODOLOGI
 ============================================================ --}}
-<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
     <div class="bg-surface-container-lowest rounded-xl border border-surface-container p-4 shadow-sm">
         <h4 class="font-bold text-sm text-on-surface mb-2 flex items-center gap-1.5">
             <span class="material-symbols-outlined text-primary text-base">calculate</span> Formula MAE
         </h4>
         <p class="text-xs text-on-surface-variant font-mono bg-surface-container p-2 rounded-lg">
-            MAE = (1/N) Σ |r<sub>ui</sub> – r̂<sub>ui</sub>|
+            MAE = (1/N) &Sigma; |r<sub>ui</sub> &ndash; r&#770;<sub>ui</sub>|
         </p>
         <p class="text-[11px] text-on-surface-variant mt-2">
-            Dimana r<sub>ui</sub> = rating aktual, r̂<sub>ui</sub> = rating prediksi sistem.
+            r<sub>ui</sub> = rating aktual, r&#770;<sub>ui</sub> = rating prediksi sistem.
         </p>
     </div>
     <div class="bg-surface-container-lowest rounded-xl border border-surface-container p-4 shadow-sm">
@@ -237,7 +245,7 @@
             <span class="material-symbols-outlined text-primary text-base">model_training</span> Metode Similaritas
         </h4>
         <p class="text-xs text-on-surface-variant font-mono bg-surface-container p-2 rounded-lg">
-            sim(i,j) = (A·B) / (‖A‖·‖B‖)
+            sim(i,j) = (A&middot;B) / (&#8214;A&#8214;&middot;&#8214;B&#8214;)
         </p>
         <p class="text-[11px] text-on-surface-variant mt-2">
             Cosine Similarity antara vektor rating item i dan item j.
@@ -248,10 +256,21 @@
             <span class="material-symbols-outlined text-primary text-base">rule</span> Threshold Relevansi
         </h4>
         <p class="text-xs text-on-surface-variant font-mono bg-surface-container p-2 rounded-lg">
-            threshold = 2.0 (implicit rating)
+            &theta; = &mu; + 0.5&sigma; = {{ $threshold }}
         </p>
         <p class="text-[11px] text-on-surface-variant mt-2">
-            Item dianggap relevan jika rating ≥ 2 (akses + minimal 60 detik membaca).
+            Threshold <em>dinamis</em>: mean ({{ $meanRating }}) + &frac12; std. deviasi. Item relevan jika rating &ge; {{ $threshold }}.
+        </p>
+    </div>
+    <div class="bg-surface-container-lowest rounded-xl border border-surface-container p-4 shadow-sm">
+        <h4 class="font-bold text-sm text-on-surface mb-2 flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-primary text-base">science</span> Pembobotan Hybrid
+        </h4>
+        <p class="text-xs text-on-surface-variant font-mono bg-surface-container p-2 rounded-lg">
+            &#375; = 0.4&sdot;UB + 0.4&sdot;IB + 0.2&sdot;SVD
+        </p>
+        <p class="text-[11px] text-on-surface-variant mt-2">
+            Agregasi: 40% User-Based CF, 40% Item-Based CF, 20% Funk SVD.
         </p>
     </div>
 </div>

@@ -18,6 +18,7 @@ use App\Http\Controllers\TestingController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\AdminConfigController;
 use App\Http\Controllers\SiswaDiagnostikController;
+use App\Http\Controllers\AchievementController;
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -49,6 +50,9 @@ Route::middleware('auth')->group(function () {
         // Kuis Diagnostik (dapat diakses meski diagnostic_done=false, dikecualikan di middleware)
         Route::get('/siswa/diagnostik', [SiswaDiagnostikController::class, 'show'])->name('siswa.diagnostik.show');
         Route::post('/siswa/diagnostik/submit', [SiswaDiagnostikController::class, 'submit'])->name('siswa.diagnostik.submit');
+
+        // Pusat Pencapaian
+        Route::get('/siswa/achievements', [AchievementController::class, 'index'])->name('siswa.achievements');
     });
 
     // Rute Guru

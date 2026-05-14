@@ -150,8 +150,7 @@ class DiagnostikSeeder extends Seeder
                 'opsi_d'        => $soal['opsi_d'],
                 'jawaban_benar' => $soal['jawaban_benar'],
                 'bobot'         => $soal['bobot'],
-                // Simpan mata_pelajaran_id di soal supaya bisa dihitung per-mapel
-                // Kita akan pakai kolom tambahan di soal jika ada, atau simpan di metadata
+                'mata_pelajaran_id' => $soal['mata_pelajaran_id'],
             ]);
         }
 
